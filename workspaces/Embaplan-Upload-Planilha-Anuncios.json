@@ -1,0 +1,141 @@
+{
+  "name": "Embaplan - Upload Planilha Anuncios",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-upload-planilha",
+        "responseMode": "responseNode",
+        "options": {
+          "binaryPropertyName": "data",
+          "ignoreBots": false
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -16,
+        -16
+      ],
+      "id": "f1a2b3c4-d5e6-4789-90ab-cdef00000001",
+      "name": "Webhook Upload Planilha",
+      "webhookId": "c0ffee01-1234-4567-8901-aabbccddeeff"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Localiza o primeiro binário .xlsx/.xls/.csv recebido pelo Webhook.\n// O n8n nomeia arquivos multipart como data0, data1, ... (com binaryPropertyName=data).\n// Renomeia para 'data0' para alimentar o nó Update File com nome estável.\nconst item = $input.first();\nconst bin = item.binary || {};\nconst keys = Object.keys(bin);\n\nif (keys.length === 0) {\n  throw new Error('Nenhum arquivo recebido. Envie um .xlsx no campo do form-data.');\n}\n\n// Pega o primeiro binário (data0 normalmente).\nconst sourceKey = keys[0];\nconst fileBin = bin[sourceKey];\nconst fileName = (fileBin.fileName || '').toLowerCase();\nconst mime = (fileBin.mimeType || '').toLowerCase();\n\nconst valid = fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.csv')\n  || mime.includes('spreadsheetml') || mime.includes('excel') || mime.includes('csv');\n\nif (!valid) {\n  throw new Error(`Arquivo inválido: ${fileBin.fileName || sourceKey}. Envie .xlsx, .xls ou .csv.`);\n}\n\nreturn [{\n  json: {\n    received_file: fileBin.fileName,\n    mime: fileBin.mimeType,\n    size_bytes: fileBin.fileSize || null\n  },\n  binary: { data0: fileBin }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -16
+      ],
+      "id": "f1a2b3c4-d5e6-4789-90ab-cdef00000002",
+      "name": "Validar Arquivo"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "113Z3z1tTYza8XYnEMBtM5elrhsus2N9yP5Ww0w3zTek",
+          "mode": "id"
+        },
+        "changeFileContent": true,
+        "inputDataFieldName": "data0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        432,
+        -16
+      ],
+      "id": "f1a2b3c4-d5e6-4789-90ab-cdef00000003",
+      "name": "Atualizar Planilha Embaplan",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "REPLACE_WITH_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"message\": \"Planilha atualizada com sucesso.\", \"file\": $('Validar Arquivo').first().json.received_file }",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        656,
+        -16
+      ],
+      "id": "f1a2b3c4-d5e6-4789-90ab-cdef00000004",
+      "name": "Respond OK"
+    },
+    {
+      "parameters": {
+        "content": "## 📥 Upload Planilha Embaplan\n\nSubstitui o conteúdo da planilha oficial de anúncios consumida pelo Agente IA.\n\n**Endpoint:** `POST /webhook/embaplan-upload-planilha`\n**Body:** `multipart/form-data` com o campo `file` (xlsx/xls/csv)\n\n⚠️ Antes de ativar:\n1. Conecte a credencial **Google Drive OAuth2** no nó *Atualizar Planilha Embaplan*.\n2. Confirme que o `fileId` `113Z3z1tTYza8XYnEMBtM5elrhsus2N9yP5Ww0w3zTek` é o ID da planilha oficial.\n3. A conta usada precisa ter permissão de **edição** no arquivo.\n\nO sub-fluxo `Consultar Planilha Inteligente` é quem lê esse arquivo (mesmo ID) — após o upload, a próxima pergunta do agente já enxerga os dados novos.",
+        "height": 280,
+        "width": 540,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -48,
+        -336
+      ],
+      "id": "f1a2b3c4-d5e6-4789-90ab-cdef00000005",
+      "name": "Sticky Note"
+    }
+  ],
+  "connections": {
+    "Webhook Upload Planilha": {
+      "main": [
+        [
+          {
+            "node": "Validar Arquivo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validar Arquivo": {
+      "main": [
+        [
+          {
+            "node": "Atualizar Planilha Embaplan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Atualizar Planilha Embaplan": {
+      "main": [
+        [
+          {
+            "node": "Respond OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "03d32a206f2d8840fce482e6c587726f18775bd9177e9401c00ca76d3086ad41"
+  },
+  "tags": []
+}

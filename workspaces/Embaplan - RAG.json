@@ -365,7 +365,7 @@
     {
       "parameters": {
         "operation": "delete",
-        "tableId": "aspiramaq_document_rows",
+        "tableId": "embaplan_document_rows",
         "filters": {
           "conditions": [
             {
@@ -699,7 +699,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "DROP TABLE IF EXISTS embaplan_document_rows CASCADE;\nDROP TABLE IF EXISTS embaplan_document_metadata CASCADE;\nDROP TABLE IF EXISTS embaplan_chat_message CASCADE;\n\n-- 1. Tabela de Arquivos\nCREATE TABLE embaplan_document_metadata (\n    id TEXT PRIMARY KEY,\n    title TEXT,\n    url TEXT,\n    created_at TIMESTAMP DEFAULT NOW(),\n    schema TEXT,\n    session_id TEXT\n);\n\n-- 2. Tabela de Linhas (Excel/CSV)\nCREATE TABLE embaplan_document_rows (\n    id SERIAL PRIMARY KEY,\n    dataset_id TEXT REFERENCES embaplan_document_metadata(id) ON DELETE CASCADE,\n    row_data JSONB\n);\n\n-- 3. Tabela de Memória do Chat\nCREATE TABLE embaplan_chat_message (\n    id SERIAL PRIMARY KEY,\n    session_id TEXT NOT NULL,\n    message JSONB NOT NULL,\n    created_at TIMESTAMP DEFAULT NOW()\n);\nCREATE INDEX embaplan_idx_chat_message_session_id ON embaplan_chat_message(session_id);",
+        "query": "DROP TABLE IF EXISTS embaplan_document_rows CASCADE;\nDROP TABLE IF EXISTS embaplan_document_metadata CASCADE;\n\n-- 1. Tabela de Arquivos\nCREATE TABLE embaplan_document_metadata (\n    id TEXT PRIMARY KEY,\n    title TEXT,\n    url TEXT,\n    created_at TIMESTAMP DEFAULT NOW(),\n    schema TEXT,\n    session_id TEXT\n);\n\n-- 2. Tabela de Linhas (Excel/CSV)\nCREATE TABLE embaplan_document_rows (\n    id SERIAL PRIMARY KEY,\n    dataset_id TEXT REFERENCES embaplan_document_metadata(id) ON DELETE CASCADE,\n    row_data JSONB\n);\n\n-- 3. Tabela de Mem\u00f3ria do Chat (NUNCA derrubada aqui \u2014 preserva hist\u00f3rico)\n--    A limpeza condicional acontece em \"Clean Database Records1\".\nCREATE TABLE IF NOT EXISTS embaplan_chat_message (\n    id SERIAL PRIMARY KEY,\n    session_id TEXT NOT NULL,\n    message JSONB NOT NULL,\n    created_at TIMESTAMP DEFAULT NOW()\n);\nCREATE INDEX IF NOT EXISTS embaplan_idx_chat_message_session_id ON embaplan_chat_message(session_id);",
         "options": {}
       },
       "id": "e565cf81-c5c3-48dc-baf2-27437be53acb",
@@ -741,7 +741,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- PASSO 1: Criar índices para acelerar a busca (Evita o erro de Timeout)\nCREATE INDEX IF NOT EXISTS aspiramaq_idx_doc_metadata_session \nON aspiramaq_document_metadata(session_id);\n\nCREATE INDEX IF NOT EXISTS aspiramaq_idx_documents_metadata_gin \nON aspiramaq_documents USING GIN (metadata);\n\n-- PASSO 2: Apagar os Vetores (Tabela documents)\n-- Como esta tabela NÃO tem chave estrangeira, precisamos apagar explicitamente\nDELETE FROM aspiramaq_documents \nWHERE metadata->>'session_id' IS NULL;\n\n-- PASSO 3: Apagar os Metadados (Tabela document_metadata)\n-- Isso vai apagar AUTOMATICAMENTE os itens da tabela 'document_rows'\n-- por causa da regra 'ON DELETE CASCADE' que você definiu.\nDELETE FROM aspiramaq_document_metadata \nWHERE session_id IS NULL;",
+        "query": "-- PASSO 1: Criar índices para acelerar a busca (Evita o erro de Timeout)\nCREATE INDEX IF NOT EXISTS embaplan_idx_doc_metadata_session \nON embaplan_document_metadata(session_id);\n\nCREATE INDEX IF NOT EXISTS embaplan_idx_documents_metadata_gin \nON embaplan_documents USING GIN (metadata);\n\n-- PASSO 2: Apagar os Vetores (Tabela documents)\n-- Como esta tabela NÃO tem chave estrangeira, precisamos apagar explicitamente\nDELETE FROM embaplan_documents \nWHERE metadata->>'session_id' IS NULL;\n\n-- PASSO 3: Apagar os Metadados (Tabela document_metadata)\n-- Isso vai apagar AUTOMATICAMENTE os itens da tabela 'document_rows'\n-- por causa da regra 'ON DELETE CASCADE' que você definiu.\nDELETE FROM embaplan_document_metadata \nWHERE session_id IS NULL;",
         "options": {}
       },
       "id": "e371dd93-4f9a-4a37-873f-75d903d618d1",
@@ -917,7 +917,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "-- 1. Remove Histórico de Chat Antigo (Removido o '*')\nDELETE FROM embaplan_chat_message;\n\n-- 2. Remove Vetores Antigos\nDELETE FROM aspirapaq_documents \nWHERE embaplan_metadata->>'session_id' IS NOT NULL;\n\n-- 3. Remove Arquivos/Metadados Antigos\nDELETE FROM embaplan_document_metadata \nWHERE session_id IS NOT NULL;",
+        "query": "=-- 1. Hist\u00f3rico de chat (3 cen\u00e1rios):\n--    \u2022 Bot\u00e3o Resetar com checkbox DESMARCADO (keepConversations=true) \u2192 preserva tudo.\n--    \u2022 Bot\u00e3o Resetar com checkbox MARCADO (keepConversations=false) \u2192 apaga TODAS as conversas.\n--    \u2022 Trigger agendado 24h (sem Webhook Setup) \u2192 apaga apenas chats das sess\u00f5es expiradas.\n{{ (() => { try { const body = $('Webhook Setup').item.json.body || {}; return body.keepConversations === true ? 'PRESERVE' : 'DELETE_ALL'; } catch (e) { return 'DELETE_EXPIRED'; } })() === 'PRESERVE' ? '-- Conversas preservadas a pedido do usu\u00e1rio' : ((() => { try { return $('Webhook Setup').item.json.body && $('Webhook Setup').item.json.body.keepConversations === false; } catch (e) { return false; } })() ? 'DELETE FROM embaplan_chat_message;' : 'DELETE FROM embaplan_chat_message WHERE session_id IN (SELECT session_id FROM embaplan_document_metadata WHERE session_id IS NOT NULL);') }}\n\n-- 2. Remove Vetores Antigos\nDELETE FROM embaplan_documents \nWHERE metadata->>'session_id' IS NOT NULL;\n\n-- 3. Remove Arquivos/Metadados Antigos\nDELETE FROM embaplan_document_metadata \nWHERE session_id IS NOT NULL;",
         "options": {}
       },
       "id": "4b9237b9-9385-45ec-aebe-e06f7ca450e5",
@@ -1684,7 +1684,7 @@
       "main": [
         [
           {
-            "node": "Get Expired File IDs1",
+            "node": "Clean Database Records1",
             "type": "main",
             "index": 0
           }

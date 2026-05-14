@@ -158,12 +158,28 @@
         color: var(--text-secondary);
       }
 
-      /* HEADER RIGHT AREA - STACKED FOR BADGES */
+      /* HEADER RIGHT AREA */
       .header-right {
         display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        gap: 6px;
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      /* Variante do reset-badge-btn para ação de upload de planilha */
+      .reset-badge-btn.sheet-btn {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #1d4ed8;
+        width: auto;
+        padding: 4px 12px;
+      }
+      .reset-badge-btn.sheet-btn:hover:not(:disabled) {
+        background: #1d4ed8;
+        color: #ffffff;
+        border-color: #1e40af;
       }
 
       .connection-status {
@@ -2184,6 +2200,7 @@
         display: flex;
         gap: 8px;
         margin-top: 12px;
+        flex-wrap: wrap;
       }
 
       .footer-btn {
@@ -2344,6 +2361,24 @@
             <div class="footer-actions">
               <button
                 class="footer-btn"
+                id="uploadSheetBtn"
+                title="Atualizar planilha de anúncios"
+                style="flex: 1 1 100%"
+              >
+                <i
+                  data-lucide="file-spreadsheet"
+                  style="width: 14px; height: 14px"
+                ></i>
+                <span>Atualizar Planilha</span>
+              </button>
+              <input
+                type="file"
+                id="sheetFileInput"
+                accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv"
+                style="display: none"
+              />
+              <button
+                class="footer-btn"
                 id="themeToggleBtn"
                 title="Alternar Tema"
               >
@@ -2474,6 +2509,7 @@
       const API_BASE = "https://longflatworm-n8n.cloudfy.live/webhook";
       const CHAT_URL = `${API_BASE}/embaplan-AgentRag`;
       const UPLOAD_URL = `${API_BASE}/embaplan-index-drive`;
+      const UPLOAD_SHEET_URL = `${API_BASE}/embaplan-upload-planilha`;
       const SESSIONS_URL = `${API_BASE}/embaplan-sessions`;
       const HISTORY_URL = `${API_BASE}/embaplan-history`;
       const DELETE_URL = `${API_BASE}/embaplan-session`;
@@ -2512,6 +2548,8 @@
         cancelDeleteBtn: document.getElementById("cancelDeleteBtn"),
         confirmDeleteBtn: document.getElementById("confirmDeleteBtn"),
         resetRagBtn: document.getElementById("resetRagBtn"),
+        uploadSheetBtn: document.getElementById("uploadSheetBtn"),
+        sheetFileInput: document.getElementById("sheetFileInput"),
         emptyState: document.getElementById("emptyState"),
         inputForm: document.getElementById("inputForm"),
       };
@@ -2933,10 +2971,14 @@
           return false;
         }
       }
-      async function resetRagDatabase() {
+      async function resetRagDatabase(options = {}) {
         try {
           const response = await fetch(RESET_URL, {
             method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              keepConversations: options.keepConversations === true,
+            }),
           });
 
           if (!response.ok) throw new Error("Failed to reset database");
@@ -2961,8 +3003,60 @@
           return null;
         }
       }
+      // Polls history endpoint until a new assistant message appears OR timeout.
+      // Used as recovery when the chat HTTP request is dropped by a proxy (e.g. CF 524 / 100s timeout)
+      // but the n8n workflow keeps running and eventually persists the answer in Postgres.
+      async function pollHistoryForRecovery(sessionId, baselineMaxId, onChunk) {
+        const MAX_MS = 5 * 60 * 1000; // 5 min ceiling
+        const INTERVAL_MS = 5000;
+        const start = Date.now();
+        if (onChunk) {
+          onChunk(
+            "_⏳ A conexão caiu, mas o agente continua trabalhando em background. Aguardando a resposta ser gravada no histórico..._",
+          );
+        }
+        while (Date.now() - start < MAX_MS) {
+          if (abortController && abortController.signal.aborted) return null;
+          await new Promise((r) => setTimeout(r, INTERVAL_MS));
+          if (abortController && abortController.signal.aborted) return null;
+          try {
+            const hist = await fetchHistory(sessionId);
+            if (!hist || !hist.length) continue;
+            // Look for an assistant message strictly newer than the baseline snapshot taken before sending.
+            const newerAssistant = hist.filter(
+              (m) =>
+                (Number(m.id) || 0) > baselineMaxId && m.role === "assistant",
+            );
+            if (newerAssistant.length) {
+              const last = newerAssistant[newerAssistant.length - 1];
+              if (onChunk && last.content) onChunk(last.content);
+              return last.content || "";
+            }
+          } catch (e) {
+            console.warn("Recovery poll failed:", e);
+          }
+        }
+        return null;
+      }
+
       async function sendMessage(message, sessionId, onChunk) {
         abortController = new AbortController();
+
+        // Snapshot of the most recent message ID BEFORE sending.
+        // Anything with an id greater than this and role=assistant after the call is our recovered response.
+        let baselineMaxId = 0;
+        try {
+          const baseline = await fetchHistory(sessionId);
+          if (baseline && baseline.length) {
+            baselineMaxId = baseline.reduce(
+              (max, m) => Math.max(max, Number(m.id) || 0),
+              0,
+            );
+          }
+        } catch (e) {
+          console.warn("Baseline history snapshot failed:", e);
+        }
+
         try {
           const response = await fetch(CHAT_URL, {
             method: "POST",
@@ -2975,7 +3069,21 @@
             signal: abortController.signal,
           });
 
-          if (!response.ok) throw new Error("Failed to send message");
+          if (!response.ok) {
+            // Proxy/gateway timeout (524, 502, 504, etc.) — n8n likely still running. Try recovery.
+            if ([502, 503, 504, 520, 521, 522, 524].includes(response.status)) {
+              console.warn(
+                `Gateway error ${response.status} — starting history-poll recovery`,
+              );
+              const recovered = await pollHistoryForRecovery(
+                sessionId,
+                baselineMaxId,
+                onChunk,
+              );
+              if (recovered) return recovered;
+            }
+            throw new Error("Failed to send message");
+          }
 
           // Verifica se suporta streaming (não é JSON direto)
           const contentType = response.headers.get("content-type");
@@ -3030,6 +3138,14 @@
             return "Geração cancelada.";
           }
           console.error("Error sending message:", error);
+          // Network/connection drop (proxy timeout, socket closed mid-stream, etc.)
+          // n8n usually keeps processing — try recovering the answer from history.
+          const recovered = await pollHistoryForRecovery(
+            sessionId,
+            baselineMaxId,
+            onChunk,
+          );
+          if (recovered) return recovered;
           return "Desculpe, ocorreu um erro ao processar sua mensagem.";
         } finally {
           abortController = null;
@@ -3366,9 +3482,13 @@
           "",
         );
 
-        // Strip markdown heading prefixes from product/pending lines so regexes match
-        parsedContent = parsedContent.replace(/^(#{1,3})\s+(📦\s)/gm, "$2");
-        parsedContent = parsedContent.replace(/^(#{1,3})\s+(⏳\s)/gm, "$2");
+        // Strip markdown heading prefixes and numbered list prefixes (e.g. "## 1) ", "**2.**", "3) ") from product/pending lines so regexes match
+        parsedContent = parsedContent.replace(
+          /^[ \t]*(?:#{1,3}\s*)?(?:\*\*|__)?\s*\d+\s*[.)\-:]\s*(?:\*\*|__)?\s*(📦\s)/gm,
+          "$1"
+        );
+        parsedContent = parsedContent.replace(/^[ \t]*(#{1,3})\s+(📦\s)/gm, "$2");
+        parsedContent = parsedContent.replace(/^[ \t]*(#{1,3})\s+(⏳\s)/gm, "$2");
 
         if (
           parsedContent.includes("📦") &&
@@ -3382,6 +3502,11 @@
           if (firstProductIdx > 0) {
             let introText = parsedContent.substring(0, firstProductIdx).trim();
             parsedContent = parsedContent.substring(firstProductIdx);
+            // Strip stray numbered product headers from intro (e.g. "# 1) BASE A4")
+            introText = introText.replace(
+              /(^|\n)[ \t]*(?:#{1,6}[ \t]+|\*\*[ \t]*)\d+\)[ \t]+[^\n]{1,80}?(?:[ \t]*\*\*)?[ \t]*(?=\n|$)/g,
+              "$1",
+            ).replace(/\n{3,}/g, "\n\n").trim();
             if (introText.length > 10) {
               introHtml =
                 '<div class="intro-box">' + marked.parse(introText) + "</div>";
@@ -3411,9 +3536,18 @@
               "</div>";
           }
 
+          // Strip stray numbered product headers the agent sometimes emits
+          // (e.g. "# 1) BASE A4", "## 2) QC 5", "**3) QC 10**", "1) PRODUTO X")
+          // These are never part of the template — only 📦 PRODUTO: is valid.
+          // Match markdown headers OR bold-only lines that look like "N) NAME".
+          parsedContent = parsedContent.replace(
+            /(^|\n)[ \t]*(?:#{1,6}[ \t]+|\*\*[ \t]*)\d+\)[ \t]+[^\n]{1,80}?(?:[ \t]*\*\*)?[ \t]*(?=\n|$)/g,
+            "$1",
+          );
+
           // Process product blocks — collect HTML into array
           const productRegex =
-            /(?:^|\n)(📦\s*(?:\*\*|)\s*PRODUTO:[^\n]+)([\s\S]*?)(?=\n📦\s*(?:\*\*|)\s*PRODUTO:|\n(?:#{1,3}\s*)?⏳\s*(?:\*\*|)\s*INDEXES? PENDENTES?|$)/gi;
+            /(?:^|\n)(📦\s*(?:\*\*|)\s*PRODUTO:[^\n]+)([\s\S]*?)(?=\n\s*(?:#{1,6}\s*)?(?:\*\*\s*)?\d+\)\s*[^\n]+\n+\s*📦\s*(?:\*\*|)\s*PRODUTO:|\n📦\s*(?:\*\*|)\s*PRODUTO:|\n(?:#{1,3}\s*)?⏳\s*(?:\*\*|)\s*INDEXES? PENDENTES?|$)/gi;
 
           let productIndex = 0;
           const totalProducts = (
@@ -3871,18 +4005,19 @@
       // EVENT HANDLERS
       // ============================================
       // Global variable for pending delete or action
-      let pendingAction = null; // 'delete' or 'reset'
+      let pendingAction = null; // 'delete' | 'reset' | 'uploadSheet'
 
       let sessionToDeleteId = null;
+      let pendingUploadFile = null;
 
-      function showConfirmModal(type, sessionId = null) {
+      function showConfirmModal(type, payload = null) {
         const titleEl = elements.confirmModal.querySelector(".confirm-title");
         const textEl = elements.confirmModal.querySelector(".confirm-text");
         const confirmBtn = elements.confirmDeleteBtn;
 
         if (type === "delete") {
           pendingAction = "delete";
-          sessionToDeleteId = sessionId;
+          sessionToDeleteId = payload;
           titleEl.textContent = "Excluir conversa";
           textEl.textContent =
             "Tem certeza que deseja excluir esta conversa permanentemente? Esta ação não pode ser desfeita.";
@@ -3891,10 +4026,22 @@
         } else if (type === "reset") {
           pendingAction = "reset";
           titleEl.textContent = "Resetar Memória RAG";
-          textEl.textContent =
-            "Tem certeza que deseja limpar e recriar o banco de dados vetorial? Isso apagará o conhecimento atual.";
+          textEl.innerHTML =
+            "Isso reprocessará os documentos do agente.<br><br>" +
+            "<label style=\"display:flex; align-items:center; gap:8px; cursor:pointer; font-size:14px;\">" +
+            "<input type=\"checkbox\" id=\"resetDeleteConversations\" style=\"width:16px; height:16px; cursor:pointer;\" />" +
+            "<span>Também apagar histórico de conversas</span>" +
+            "</label>";
           confirmBtn.textContent = "Resetar";
           confirmBtn.style.background = "#d32f2f"; // Warning color
+        } else if (type === "uploadSheet") {
+          pendingAction = "uploadSheet";
+          pendingUploadFile = payload;
+          titleEl.textContent = "Atualizar planilha oficial";
+          textEl.innerHTML =
+            `Substituir a planilha oficial de anúncios pelo arquivo <strong>“${payload.name}”</strong>?<br><br>Isso afetará as próximas análises do Agente IA.`;
+          confirmBtn.textContent = "Enviar e Substituir";
+          confirmBtn.style.background = "#2563eb";
         }
 
         elements.confirmModal.style.display = "flex";
@@ -3903,6 +4050,7 @@
       function hideDeleteModal() {
         pendingAction = null;
         sessionToDeleteId = null;
+        pendingUploadFile = null;
         elements.confirmModal.style.display = "none";
       }
 
@@ -3949,15 +4097,28 @@
             elements.confirmDeleteBtn.disabled = false;
           }
         } else if (pendingAction === "reset") {
+          const deleteConvCheckbox = document.getElementById(
+            "resetDeleteConversations",
+          );
+          const deleteConversations = !!(
+            deleteConvCheckbox && deleteConvCheckbox.checked
+          );
           hideDeleteModal();
 
           // Set special state so setLoading knows to update the Reset Button UI specifically
           pendingAction = "resetProcessing";
 
           setLoading(true);
-          setStatus("Reiniciando base de conhecimento...", "warning");
+          setStatus(
+            deleteConversations
+              ? "Reiniciando base de conhecimento e limpando conversas..."
+              : "Reprocessando documentos (conversas preservadas)...",
+            "warning",
+          );
 
-          const result = await resetRagDatabase();
+          const result = await resetRagDatabase({
+            keepConversations: !deleteConversations,
+          });
 
           setLoading(false); // Restore UI
 
@@ -3969,11 +4130,44 @@
 
             // REFRESH DATA (RESET INTERFACE)
             console.log("🔄 Refreshing app data after reset...");
-            sessions = await fetchSessions(); // Update sidebar (likely clear it)
+            sessions = await fetchSessions(); // Update sidebar
             renderSessionList();
-            startNewChat(); // Clear current view
+            if (deleteConversations) {
+              startNewChat(); // Clear current view only if conversations were wiped
+            }
           } else {
             setStatus("Erro ao resetar memória RAG.", "error");
+          }
+        } else if (pendingAction === "uploadSheet" && pendingUploadFile) {
+          const file = pendingUploadFile;
+          hideDeleteModal();
+
+          const origLabel = elements.uploadSheetBtn.innerHTML;
+          elements.uploadSheetBtn.disabled = true;
+          elements.uploadSheetBtn.innerHTML = `<i data-lucide="loader-2" class="animate-spin" style="width:12px; height:12px;"></i><span>Enviando...</span>`;
+          if (window.lucide) lucide.createIcons();
+          setStatus(`Enviando ${file.name}...`, "warning");
+
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            const response = await fetch(UPLOAD_SHEET_URL, {
+              method: "POST",
+              body: formData,
+            });
+            if (!response.ok) {
+              const txt = await response.text().catch(() => "");
+              throw new Error(txt || `HTTP ${response.status}`);
+            }
+            setStatus(`Planilha "${file.name}" atualizada com sucesso.`, "success");
+          } catch (err) {
+            console.error("Sheet upload error:", err);
+            setStatus(`Falha ao atualizar planilha: ${err.message || err}`, "error");
+          } finally {
+            elements.uploadSheetBtn.disabled = false;
+            elements.uploadSheetBtn.innerHTML = origLabel;
+            if (window.lucide) lucide.createIcons();
+            elements.sheetFileInput.value = "";
           }
         }
       });
@@ -3987,6 +4181,30 @@
         elements.resetRagBtn.addEventListener("click", () => {
           console.log("🔄 Reset button clicked - waiting for confirmation");
           showConfirmModal("reset");
+        });
+      }
+
+      // ============================================
+      // UPLOAD PLANILHA DE ANÚNCIOS (substitui Google Sheet oficial)
+      // ============================================
+      if (elements.uploadSheetBtn && elements.sheetFileInput) {
+        elements.uploadSheetBtn.addEventListener("click", () => {
+          elements.sheetFileInput.click();
+        });
+
+        elements.sheetFileInput.addEventListener("change", (e) => {
+          const file = e.target.files[0];
+          if (!file) return;
+
+          const okName = /\.(xlsx|xls|csv)$/i.test(file.name);
+          if (!okName) {
+            setStatus("Envie um arquivo .xlsx, .xls ou .csv.", "error");
+            e.target.value = "";
+            return;
+          }
+
+          // Abre modal customizado de confirmação; upload real acontece ao confirmar.
+          showConfirmModal("uploadSheet", file);
         });
       }
       async function loadSession(sessionId) {
