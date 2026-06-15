@@ -1613,6 +1613,9 @@
       body.dashboard-open #sessionList {
         display: none;
       }
+      body.dashboard-open #sidebar-header {
+        display: none;
+      }
       body.dashboard-open #dashboardSidebarNote {
         display: flex !important;
       }
@@ -3519,6 +3522,12 @@
         <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
         <!-- SIDEBAR -->
         <aside id="sidebar">
+          <div id="sidebar-header">
+            <button id="newChatBtn" title="Iniciar nova conversa">
+              <i data-lucide="plus"></i>
+              <span>Nova conversa</span>
+            </button>
+          </div>
           <div id="sessionList">
             <!-- Sessões carregadas aqui -->
           </div>
