@@ -10,7 +10,7 @@
 
 -- =======  UP  ========
 
-CREATE OR REPLACE FUNCTION sameka_embaplan_extract_link(p_metrics JSONB)
+CREATE OR REPLACE FUNCTION embaplan_extract_link(p_metrics JSONB)
 RETURNS TEXT
 IMMUTABLE
 LANGUAGE sql
@@ -32,12 +32,3 @@ $$;
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- CREATE OR REPLACE FUNCTION sameka_embaplan_extract_link(p_metrics JSONB)
--- RETURNS TEXT IMMUTABLE LANGUAGE sql AS $$
---   SELECT NULLIF(TRIM(COALESCE(
---     p_metrics->>'link', p_metrics->>'url', p_metrics->>'permalink',
---     p_metrics->>'anuncio_url', p_metrics->>'link_anuncio',
---     p_metrics->>'url_anuncio', p_metrics->>'Link', p_metrics->>'URL'
---   )), '');
--- $$;
--- NOTIFY pgrst, 'reload schema';

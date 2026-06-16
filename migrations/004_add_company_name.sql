@@ -1,15 +1,15 @@
 -- =============================================
--- Sameka — 004: Add company_name filter
+-- Embaplan — 004: Add company_name filter
 -- Differentiates users between projects using
 -- raw_user_meta_data->>'company_name'.
--- list_users now returns only 'sameka' users.
+-- list_users now returns only 'embaplan' users.
 -- Run AFTER 003_admin_guards.sql
 -- =============================================
 
 -- =======  UP  ========
 
--- 1) is_admin: also require company_name = 'sameka'
-CREATE OR REPLACE FUNCTION sameka_is_admin()
+-- 1) is_admin: also require company_name = 'embaplan'
+CREATE OR REPLACE FUNCTION embaplan_is_admin()
 RETURNS BOOLEAN
 SECURITY DEFINER
 SET search_path = auth, public
@@ -18,16 +18,16 @@ STABLE
 AS $$
   SELECT COALESCE(
     (SELECT raw_user_meta_data->>'role' = 'admin'
-            AND raw_user_meta_data->>'company_name' = 'sameka'
+            AND raw_user_meta_data->>'company_name' = 'embaplan'
      FROM auth.users
      WHERE id = auth.uid()),
     false
   );
 $$;
 
--- 2) list_users: filter by company_name = 'sameka', expose company_name column
-DROP FUNCTION IF EXISTS sameka_admin_list_users();
-CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+-- 2) list_users: filter by company_name = 'embaplan', expose company_name column
+DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 RETURNS TABLE(
   user_id      UUID,
   email        TEXT,
@@ -42,7 +42,7 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
   RETURN QUERY
@@ -54,14 +54,14 @@ BEGIN
       COALESCE(u.raw_user_meta_data->>'company_name', '')::TEXT AS company_name,
       u.created_at
     FROM auth.users u
-    WHERE u.raw_user_meta_data->>'company_name' = 'sameka'
+    WHERE u.raw_user_meta_data->>'company_name' = 'embaplan'
     ORDER BY u.created_at DESC;
 END;
 $$;
 
 -- 3) update_user: persist company_name in metadata
-DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT);
-CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT);
+CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
   p_user_id      UUID,
   p_full_name    TEXT,
   p_role         TEXT DEFAULT NULL
@@ -74,10 +74,10 @@ AS $$
 DECLARE
   new_meta JSONB;
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
-  new_meta := jsonb_build_object('full_name', p_full_name, 'company_name', 'sameka');
+  new_meta := jsonb_build_object('full_name', p_full_name, 'company_name', 'embaplan');
   IF p_role IS NOT NULL THEN
     new_meta := new_meta || jsonb_build_object('role', p_role);
   END IF;
@@ -89,25 +89,25 @@ END;
 $$;
 
 -- 4) Backfill: stamp all existing users that don't have company_name yet
--- with 'sameka' so they appear in list_users after migration.
+-- with 'embaplan' so they appear in list_users after migration.
 UPDATE auth.users
 SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb)
-                         || '{"company_name": "sameka"}'::jsonb,
+                         || '{"company_name": "embaplan"}'::jsonb,
     updated_at = NOW()
 WHERE raw_user_meta_data->>'company_name' IS NULL
    OR raw_user_meta_data->>'company_name' = '';
 
--- Re-grant (signatures unchanged for confirm/delete, new signature for list/update)
-GRANT EXECUTE ON FUNCTION sameka_is_admin() TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
+-- Re-grant
+GRANT EXECUTE ON FUNCTION embaplan_is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
 -- Reverts to 003 versions (no company_name filter)
 --
--- CREATE OR REPLACE FUNCTION sameka_is_admin()
+-- CREATE OR REPLACE FUNCTION embaplan_is_admin()
 -- RETURNS BOOLEAN
 -- SECURITY DEFINER
 -- SET search_path = auth, public
@@ -122,8 +122,8 @@ NOTIFY pgrst, 'reload schema';
 --   );
 -- $$;
 --
--- DROP FUNCTION IF EXISTS sameka_admin_list_users();
--- CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+-- DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+-- CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 -- RETURNS TABLE(
 --   user_id    UUID,
 --   email      TEXT,
@@ -137,7 +137,7 @@ NOTIFY pgrst, 'reload schema';
 -- STABLE
 -- AS $$
 -- BEGIN
---   IF NOT sameka_is_admin() THEN
+--   IF NOT embaplan_is_admin() THEN
 --     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
 --   END IF;
 --   RETURN QUERY
@@ -152,8 +152,8 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT);
--- CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+-- DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT);
+-- CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
 --   p_user_id   UUID,
 --   p_full_name TEXT,
 --   p_role      TEXT DEFAULT NULL
@@ -166,7 +166,7 @@ NOTIFY pgrst, 'reload schema';
 -- DECLARE
 --   new_meta JSONB;
 -- BEGIN
---   IF NOT sameka_is_admin() THEN
+--   IF NOT embaplan_is_admin() THEN
 --     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
 --   END IF;
 --   new_meta := jsonb_build_object('full_name', p_full_name);
@@ -180,8 +180,8 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- GRANT EXECUTE ON FUNCTION sameka_is_admin() TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_is_admin() TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
 --
 -- NOTIFY pgrst, 'reload schema';

@@ -1,15 +1,15 @@
--- 007 — Add user_id to sameka_chat_message + auto-fill trigger
+-- 007 — Add user_id to embaplan_chat_message + auto-fill trigger
 -- Run once against the Supabase DB (SQL Editor → New query → Run)
 
 -- =============================================
 -- 1. Add column (nullable so existing rows are kept)
 -- =============================================
-ALTER TABLE sameka_chat_message
+ALTER TABLE embaplan_chat_message
   ADD COLUMN IF NOT EXISTS user_id UUID;
 
 -- 2. Index for fast lookups
 CREATE INDEX IF NOT EXISTS idx_chat_message_user_id
-  ON sameka_chat_message (user_id);
+  ON embaplan_chat_message (user_id);
 
 -- =============================================
 -- 3. Trigger: auto-extract user_id on every INSERT
@@ -38,10 +38,10 @@ BEGIN
   ELSE
     -- AI/system message: look up user_id from an earlier human message in same session
     SELECT cm.user_id INTO _uid
-      FROM sameka_chat_message cm
+      FROM embaplan_chat_message cm
      WHERE cm.session_id = NEW.session_id
        AND cm.user_id IS NOT NULL
-     LIMIT 1;
+      LIMIT 1;
     IF _uid IS NOT NULL THEN
       NEW.user_id := _uid;
     END IF;
@@ -52,10 +52,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Drop if exists to allow re-running
-DROP TRIGGER IF EXISTS trg_chat_set_user_id ON sameka_chat_message;
+DROP TRIGGER IF EXISTS trg_chat_set_user_id ON embaplan_chat_message;
 
 CREATE TRIGGER trg_chat_set_user_id
-  BEFORE INSERT ON sameka_chat_message
+  BEFORE INSERT ON embaplan_chat_message
   FOR EACH ROW
   EXECUTE FUNCTION trg_set_chat_user_id();
 
@@ -64,17 +64,17 @@ CREATE TRIGGER trg_chat_set_user_id
 -- =============================================
 
 -- 4a. Human messages: extract from content
-UPDATE sameka_chat_message
+UPDATE embaplan_chat_message
    SET user_id = (substring(message->>'content' from 'ID="([0-9a-fA-F-]{36})"'))::UUID
  WHERE message->>'type' = 'human'
    AND user_id IS NULL
    AND message->>'content' LIKE '%ID="%';
 
 -- 4b. AI messages: copy from human messages in same session
-UPDATE sameka_chat_message cm
+UPDATE embaplan_chat_message cm
    SET user_id = (
      SELECT cm2.user_id
-       FROM sameka_chat_message cm2
+       FROM embaplan_chat_message cm2
       WHERE cm2.session_id = cm.session_id
         AND cm2.user_id IS NOT NULL
       LIMIT 1

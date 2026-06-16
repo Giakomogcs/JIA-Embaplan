@@ -12,7 +12,7 @@
 
 -- Helper imutável para puxar o 1º valor não-nulo dentre as
 -- chaves de link mais comuns que podem vir da planilha.
-CREATE OR REPLACE FUNCTION sameka_embaplan_extract_link(p_metrics JSONB)
+CREATE OR REPLACE FUNCTION embaplan_extract_link(p_metrics JSONB)
 RETURNS TEXT
 IMMUTABLE
 LANGUAGE sql
@@ -32,11 +32,11 @@ AS $$
 $$;
 
 -- ---------------------------------------------
--- Overview enriquecido (precisa DROP por mudar o RETURNS TABLE)
+-- Overview enriquecido
 -- ---------------------------------------------
-DROP FUNCTION IF EXISTS sameka_embaplan_latest_overview(TEXT);
+DROP FUNCTION IF EXISTS embaplan_latest_overview(TEXT);
 
-CREATE OR REPLACE FUNCTION sameka_embaplan_latest_overview(
+CREATE OR REPLACE FUNCTION embaplan_latest_overview(
   p_loja TEXT DEFAULT NULL
 )
 RETURNS TABLE(
@@ -88,7 +88,7 @@ AS $$
   )
   SELECT
     anuncio_indice, loja, produto, titulo, status,
-    sameka_embaplan_extract_link(metrics_jsonb) AS link,
+    embaplan_extract_link(metrics_jsonb) AS link,
     saude, acos, roas, lucro, receita, vendas, conversao, ctr,
     investimento_ads, ticket_medio,
     (saude - prev_saude) AS delta_saude,
@@ -108,9 +108,9 @@ $$;
 -- ---------------------------------------------
 -- Timeline enriquecida com link e investimento_ads
 -- ---------------------------------------------
-DROP FUNCTION IF EXISTS sameka_embaplan_ad_timeline(TEXT, INTEGER);
+DROP FUNCTION IF EXISTS embaplan_ad_timeline(TEXT, INTEGER);
 
-CREATE OR REPLACE FUNCTION sameka_embaplan_ad_timeline(
+CREATE OR REPLACE FUNCTION embaplan_ad_timeline(
   p_anuncio_indice TEXT,
   p_limit          INTEGER DEFAULT 24
 )
@@ -151,7 +151,7 @@ AS $$
       b.created_at AS data_upload,
       ROW_NUMBER() OVER (ORDER BY b.created_at) AS versao,
       s.loja, s.produto, s.titulo, s.status,
-      sameka_embaplan_extract_link(s.metrics_jsonb) AS link,
+      embaplan_extract_link(s.metrics_jsonb) AS link,
       s.saude, s.acos, s.roas, s.conversao, s.ctr,
       s.lucro, s.receita, s.vendas, s.investimento_ads, s.ticket_medio,
       LAG(s.saude) OVER (ORDER BY b.created_at) AS prev_saude,
@@ -180,13 +180,11 @@ AS $$
   LIMIT p_limit;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_embaplan_extract_link(JSONB) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_latest_overview(TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_ad_timeline(TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_extract_link(JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_latest_overview(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_ad_timeline(TEXT, INTEGER) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- DROP FUNCTION IF EXISTS sameka_embaplan_extract_link(JSONB);
--- (re-aplicar 008_analysis_snapshots.sql para restaurar as
---  assinaturas originais de overview/timeline)
+-- DROP FUNCTION IF EXISTS embaplan_extract_link(JSONB);

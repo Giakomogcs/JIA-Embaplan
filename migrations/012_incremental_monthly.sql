@@ -22,12 +22,8 @@ CREATE INDEX IF NOT EXISTS idx_batch_periodo
 
 -- ---------------------------------------------
 -- RPC: cria (ou substitui) o batch de um mês.
---   p_periodo aceita 'YYYY-MM' ou 'YYYY-MM-DD' (normaliza
---   para o 1º dia do mês). Se p_replace = TRUE e já existir
---   batch para o mesmo mês, ele é apagado (cascateando os
---   snapshots) antes de criar o novo → reenvio idempotente.
 -- ---------------------------------------------
-CREATE OR REPLACE FUNCTION sameka_embaplan_create_month_batch(
+CREATE OR REPLACE FUNCTION embaplan_create_month_batch(
   p_user_id      UUID DEFAULT NULL,
   p_periodo      TEXT DEFAULT NULL,
   p_rotulo       TEXT DEFAULT NULL,
@@ -74,9 +70,9 @@ $$;
 -- ---------------------------------------------
 -- Atualiza a timeline para expor o período (mês) do batch.
 -- ---------------------------------------------
-DROP FUNCTION IF EXISTS sameka_embaplan_ad_timeline(TEXT, INTEGER);
+DROP FUNCTION IF EXISTS embaplan_ad_timeline(TEXT, INTEGER);
 
-CREATE OR REPLACE FUNCTION sameka_embaplan_ad_timeline(
+CREATE OR REPLACE FUNCTION embaplan_ad_timeline(
   p_anuncio_indice TEXT,
   p_limit          INTEGER DEFAULT 24
 )
@@ -119,7 +115,7 @@ AS $$
       b.created_at AS data_upload,
       ROW_NUMBER() OVER (ORDER BY COALESCE(b.periodo, b.created_at::date), b.created_at) AS versao,
       s.loja, s.produto, s.titulo, s.status,
-      sameka_embaplan_extract_link(s.metrics_jsonb) AS link,
+      embaplan_extract_link(s.metrics_jsonb) AS link,
       s.saude, s.acos, s.roas, s.conversao, s.ctr,
       s.lucro, s.receita, s.vendas, s.investimento_ads, s.ticket_medio,
       LAG(s.saude) OVER (ORDER BY COALESCE(b.periodo, b.created_at::date), b.created_at) AS prev_saude,
@@ -148,13 +144,10 @@ AS $$
   LIMIT p_limit;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_embaplan_create_month_batch(UUID, TEXT, TEXT, TEXT, BOOLEAN) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_ad_timeline(TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_create_month_batch(UUID, TEXT, TEXT, TEXT, BOOLEAN) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_ad_timeline(TEXT, INTEGER) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- DROP FUNCTION IF EXISTS sameka_embaplan_create_month_batch(UUID, TEXT, TEXT, TEXT, BOOLEAN);
--- ALTER TABLE embaplan_upload_batch DROP COLUMN IF EXISTS periodo;
--- (re-aplicar 011_overview_link_metrics.sql para restaurar a timeline)
--- NOTIFY pgrst, 'reload schema';
+-- DROP FUNCTION IF EXISTS embaplan_create_month_batch(UUID, TEXT, TEXT, TEXT, BOOLEAN);

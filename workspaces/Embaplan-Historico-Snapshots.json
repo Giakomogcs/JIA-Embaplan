@@ -2,7 +2,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## 📈 Histórico de Anúncios (Linha do Tempo)\n\nImplementa o Épico 1 do PRD. Três entradas:\n\n**1) POST `/webhook/embaplan-capture-snapshot`** — recebe o `SUMARIO_PRE_CALCULADO` (campo `produtos[]`) + opcional `rotulo`, `arquivo_nome`, `user_id`. Cria um *batch* (versão) e grava 1 snapshot por anúncio. Deve ser chamado ao final do fluxo de upload da planilha.\n\n**2) GET `/webhook/embaplan-ad-timeline?indice=L2%2347`** — série temporal de um anúncio para o gráfico do front.\n\n**3) GET `/webhook/embaplan-overview?loja=Loja%202`** — estado atual de todos os anúncios + tendência (Dashboard).\n\n### ⚙️ Antes de ativar\n1. Os nós `*(RPC)` usam a credencial **Postgres** `Supabase_database` (conexão direta ao banco do Supabase) — não é mais necessário service_role nem HTTP Header Auth.\n2. Rode as migrations `008` a `012` no Supabase para criar as funções `sameka_embaplan_*`.\n3. As queries chamam as funções via `SELECT ... FROM sameka_embaplan_xxx($1, ...)` com *Query Parameters* (n8n sanitiza os valores, evitando SQL injection).",
+        "content": "## 📈 Histórico de Anúncios (Linha do Tempo)\n\nImplementa o Épico 1 do PRD. Três entradas:\n\n**1) POST `/webhook/embaplan-capture-snapshot`** — recebe o `SUMARIO_PRE_CALCULADO` (campo `produtos[]`) + opcional `rotulo`, `arquivo_nome`, `user_id`. Cria um *batch* (versão) e grava 1 snapshot por anúncio. Deve ser chamado ao final do fluxo de upload da planilha.\n\n**2) GET `/webhook/embaplan-ad-timeline?indice=L2%2347`** — série temporal de um anúncio para o gráfico do front.\n\n**3) GET `/webhook/embaplan-overview?loja=Loja%202`** — estado atual de todos os anúncios + tendência (Dashboard).\n\n### ⚙️ Antes de ativar\n1. Os nós `*(RPC)` usam a credencial **Postgres** `Supabase_database` (conexão direta ao banco do Supabase) — não é mais necessário service_role nem HTTP Header Auth.\n2. Rode as migrations `008` a `012` no Supabase para criar as funções `embaplan_*`.\n3. As queries chamam as funções via `SELECT ... FROM embaplan_xxx($1, ...)` com *Query Parameters* (n8n sanitiza os valores, evitando SQL injection).",
         "height": 360,
         "width": 520,
         "color": 4
@@ -60,7 +60,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_create_month_batch($1::uuid, $2::text, $3::text, $4::text, $5::boolean) AS batch_id;",
+        "query": "SELECT embaplan_create_month_batch($1::uuid, $2::text, $3::text, $4::text, $5::boolean) AS batch_id;",
         "options": {
           "queryReplacement": "={{ [$json.user_id || null, $json.periodo || null, $json.rotulo || null, $json.arquivo_nome || null, true] }}"
         }
@@ -80,7 +80,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_insert_snapshots($1::bigint, $2::jsonb) AS anuncios_gravados;",
+        "query": "SELECT embaplan_insert_snapshots($1::bigint, $2::jsonb) AS anuncios_gravados;",
         "options": {
           "queryReplacement": "={{ [$json.batch_id, JSON.stringify($('Flatten Snapshots').first().json.rows)] }}"
         }
@@ -137,7 +137,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS pontos FROM sameka_embaplan_ad_timeline($1::text, $2::int) t;",
+        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS pontos FROM embaplan_ad_timeline($1::text, $2::int) t;",
         "options": {
           "queryReplacement": "={{ [$json.p_anuncio_indice, $json.p_limit] }}"
         }
@@ -194,7 +194,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS anuncios FROM sameka_embaplan_latest_overview($1::text) t;",
+        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS anuncios FROM embaplan_latest_overview($1::text) t;",
         "options": {
           "queryReplacement": "={{ [$json.p_loja || null] }}"
         }
@@ -251,7 +251,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS recomendacoes FROM sameka_embaplan_recommendations_for_ad($1::text) t;",
+        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS recomendacoes FROM embaplan_recommendations_for_ad($1::text) t;",
         "options": {
           "queryReplacement": "={{ [$json.p_anuncio_indice] }}"
         }
@@ -309,7 +309,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_set_recommendation_status($1::bigint, $2::text, $3::text);",
+        "query": "SELECT embaplan_set_recommendation_status($1::bigint, $2::text, $3::text);",
         "options": {
           "queryReplacement": "={{ [$json.p_id, $json.p_status, $json.p_nota || null] }}"
         }
@@ -367,7 +367,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_add_user_change($1::uuid, $2::text, $3::text, $4::text, $5::text, $6::text) AS id;",
+        "query": "SELECT embaplan_add_user_change($1::uuid, $2::text, $3::text, $4::text, $5::text, $6::text) AS id;",
         "options": {
           "queryReplacement": "={{ [$json.p_user_id || null, $json.p_anuncio_indice, $json.p_texto, $json.p_loja || null, $json.p_produto || null, $json.p_metrica_alvo || null] }}"
         }
@@ -425,7 +425,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_add_agent_recommendations($1::uuid, $2::jsonb) AS registradas;",
+        "query": "SELECT embaplan_add_agent_recommendations($1::uuid, $2::jsonb) AS registradas;",
         "options": {
           "queryReplacement": "={{ [$json.p_user_id || null, JSON.stringify($json.p_rows)] }}"
         }
@@ -483,7 +483,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_delete_recommendation($1::bigint);",
+        "query": "SELECT embaplan_delete_recommendation($1::bigint);",
         "options": {
           "queryReplacement": "={{ [$json.p_id] }}"
         }

@@ -1,0 +1,123 @@
+{
+  "name": "Embaplan-Portfolio-Evolution",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "embaplan-portfolio-evolution",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "evolution-webhook-id",
+      "name": "Webhook - Portfolio Evolution",
+      "position": [
+        -200,
+        100
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "evolution-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const q = $input.first().json.query || {};\nreturn [{\n  json: {\n    p_loja: q.loja || null,\n    p_produto: q.produto || null\n  }\n}];"
+      },
+      "id": "evolution-parse-id",
+      "name": "Parse Evolution Query",
+      "position": [
+        0,
+        100
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS evolucao FROM embaplan_portfolio_evolution($1::text, $2::text) t;",
+        "options": {
+          "queryReplacement": "={{ [$json.p_loja || null, $json.p_produto || null] }}"
+        }
+      },
+      "id": "evolution-db-id",
+      "name": "Evolution from DB (RPC)",
+      "position": [
+        200,
+        100
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"evolucao\": {{ JSON.stringify($json.evolucao) }}\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "evolution-respond-id",
+      "name": "Respond Evolution",
+      "position": [
+        400,
+        100
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Portfolio Evolution": {
+      "main": [
+        [
+          {
+            "node": "Parse Evolution Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Evolution Query": {
+      "main": [
+        [
+          {
+            "node": "Evolution from DB (RPC)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evolution from DB (RPC)": {
+      "main": [
+        [
+          {
+            "node": "Respond Evolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "evolution-workflow-version-id",
+  "meta": {
+    "instanceId": "03d32a206f2d8840fce482e6c587726f18775bd9177e9401c00ca76d3086ad41"
+  },
+  "id": "evolution-workflow-id",
+  "tags": []
+}

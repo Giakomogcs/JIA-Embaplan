@@ -1,0 +1,147 @@
+{
+  "name": "Embaplan-Detect-Changes",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-detect-changes",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "detect-webhook-id",
+      "name": "Webhook - Detect Changes",
+      "position": [
+        -200,
+        100
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "detect-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nreturn [{\n  json: {\n    p_batch_id: body.batch_id || null\n  }\n}];"
+      },
+      "id": "detect-parse-query-id",
+      "name": "Parse Detect Args",
+      "position": [
+        0,
+        100
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT loja, produto, anuncio_indice, titulo, status, saude, vendas, receita, lucro, investimento_ads, acos, ctr, conversao, roas, roi, margem_liquida, ticket_medio FROM embaplan_analysis_snapshot WHERE batch_id = COALESCE($1::bigint, (SELECT MAX(id) FROM embaplan_upload_batch));",
+        "options": {
+          "queryReplacement": "={{ [$json.p_batch_id || null] }}"
+        }
+      },
+      "id": "detect-db-id",
+      "name": "Previous Snapshots from DB",
+      "position": [
+        200,
+        100
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $('Webhook - Detect Changes').first().json.body || {};\nconst produtos = body.produtos || [];\nconst prevSnapshots = $input.all().map(item => item.json);\n\n// Mapeia snapshots anteriores por anuncio_indice\nconst prevMap = new Map();\nfor (const s of prevSnapshots) {\n  prevMap.set(String(s.anuncio_indice), s);\n}\n\nconst alteracoes = [];\n\nfor (const prod of produtos) {\n  const anuncios = prod.anuncios_detalhados || [];\n  for (const cur of anuncios) {\n    const idx = String(cur.indice || cur.id_anuncio);\n    const prev = prevMap.get(idx);\n    \n    if (!prev) {\n      // Novo anúncio\n      alteracoes.push({\n        anuncio: cur.titulo || idx,\n        anuncio_indice: idx,\n        loja: cur.loja,\n        produto: prod.produto,\n        campo: 'Status',\n        valor_anterior: null,\n        valor_atual: cur.status || 'Ativo',\n        delta_pct: null,\n        tipo: 'novo',\n        resumo: `Novo anúncio detectado: ${cur.titulo || idx}`\n      });\n      continue;\n    }\n    \n    // Comparar Preço (GMV / Vendas)\n    const curVendas = Number(cur.vendas) || 0;\n    const curReceita = Number(cur.receita) || 0;\n    const prevVendas = Number(prev.vendas) || 0;\n    const prevReceita = Number(prev.receita) || 0;\n    \n    const curPrice = curVendas > 0 ? (curReceita / curVendas) : 0;\n    const prevPrice = prevVendas > 0 ? (prevReceita / prevVendas) : 0;\n    \n    if (curPrice > 0 && prevPrice > 0) {\n      const deltaPricePct = ((curPrice - prevPrice) / prevPrice) * 100;\n      // Threshold de 2%\n      if (Math.abs(deltaPricePct) >= 2) {\n        alteracoes.push({\n          anuncio: cur.titulo || idx,\n          anuncio_indice: idx,\n          loja: cur.loja,\n          produto: prod.produto,\n          campo: 'Preço',\n          valor_anterior: Math.round(prevPrice * 100) / 100,\n          valor_atual: Math.round(curPrice * 100) / 100,\n          delta_pct: Math.round(deltaPricePct * 100) / 100,\n          tipo: 'preco',\n          resumo: `Preço alterado de R$ ${prevPrice.toFixed(2)} para R$ ${curPrice.toFixed(2)} (${deltaPricePct > 0 ? '+' : ''}${Math.round(deltaPricePct)}%)`\n        });\n      }\n    }\n    \n    // Comparar Investimento Ads (custo_ads)\n    const curAds = Number(cur.custo_ads || cur.investimento_ads) || 0;\n    const prevAds = Number(prev.investimento_ads) || 0;\n    if (prevAds > 0 || curAds > 0) {\n      const prevVal = prevAds || 0;\n      const curVal = curAds || 0;\n      if (prevVal > 0) {\n        const deltaAdsPct = ((curVal - prevVal) / prevVal) * 100;\n        // Threshold de 10%\n        if (Math.abs(deltaAdsPct) >= 10) {\n          alteracoes.push({\n            anuncio: cur.titulo || idx,\n            anuncio_indice: idx,\n            loja: cur.loja,\n            produto: prod.produto,\n            campo: 'Investimento Ads',\n            valor_anterior: prevVal,\n            valor_atual: curVal,\n            delta_pct: Math.round(deltaAdsPct * 100) / 100,\n            tipo: 'investimento',\n            resumo: `Investimento Ads alterado de R$ ${prevVal.toFixed(2)} para R$ ${curVal.toFixed(2)} (${deltaAdsPct > 0 ? '+' : ''}${Math.round(deltaAdsPct)}%)`\n          });\n        }\n      }\n    }\n    \n    // Comparar Status\n    if (cur.status && prev.status && cur.status !== prev.status) {\n      alteracoes.push({\n        anuncio: cur.titulo || idx,\n        anuncio_indice: idx,\n        loja: cur.loja,\n        produto: prod.produto,\n        campo: 'Status',\n        valor_anterior: prev.status,\n        valor_atual: cur.status,\n        delta_pct: null,\n        tipo: 'status',\n        resumo: `Status alterado de ${prev.status} para ${cur.status}`\n      });\n    }\n  }\n}\n\n// Procurar anúncios removidos\nconst curIndices = new Set();\nfor (const prod of produtos) {\n  const anuncios = prod.anuncios_detalhados || [];\n  for (const cur of anuncios) {\n    curIndices.add(String(cur.indice || cur.id_anuncio));\n  }\n}\nfor (const s of prevSnapshots) {\n  if (!curIndices.has(String(s.anuncio_indice))) {\n    alteracoes.push({\n      anuncio: s.titulo || s.anuncio_indice,\n      anuncio_indice: s.anuncio_indice,\n      loja: s.loja,\n      produto: s.produto,\n      campo: 'Status',\n      valor_anterior: s.status,\n      valor_atual: 'Removido',\n      delta_pct: null,\n      tipo: 'removido',\n      resumo: `Anúncio removido: ${s.titulo || s.anuncio_indice}`\n    });\n  }\n}\n\nreturn [{\n  json: {\n    alteracoes,\n    resumo: `${alteracoes.length} alteração(ões) detectada(s)`\n  }\n}];"
+      },
+      "id": "detect-comparison-id",
+      "name": "Compare Data",
+      "position": [
+        400,
+        100
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"alteracoes\": {{ JSON.stringify($json.alteracoes) }},\n  \"resumo\": \"{{ $json.resumo }}\"\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "detect-respond-id",
+      "name": "Respond Changes",
+      "position": [
+        600,
+        100
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Detect Changes": {
+      "main": [
+        [
+          {
+            "node": "Parse Detect Args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Detect Args": {
+      "main": [
+        [
+          {
+            "node": "Previous Snapshots from DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Previous Snapshots from DB": {
+      "main": [
+        [
+          {
+            "node": "Compare Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compare Data": {
+      "main": [
+        [
+          {
+            "node": "Respond Changes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "detect-workflow-version-id",
+  "meta": {
+    "instanceId": "03d32a206f2d8840fce482e6c587726f18775bd9177e9401c00ca76d3086ad41"
+  },
+  "id": "detect-workflow-id",
+  "tags": []
+}

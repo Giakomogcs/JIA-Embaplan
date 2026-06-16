@@ -6,7 +6,7 @@
 --     em JSON, para a IA gerar sugestões fundamentadas (sem alucinar).
 --   • Função de GESTÃO: apagar uma recomendação (limpeza manual no front).
 -- As recomendações geradas continuam sendo gravadas pela função já
--- existente `sameka_embaplan_add_agent_recommendations` (migration 010),
+-- existente `embaplan_add_agent_recommendations` (migration 010),
 -- com origem='agente'.
 -- Run AFTER 010_agent_recommendations.sql
 -- =============================================
@@ -22,7 +22,7 @@
 --      • recomendacoes_existentes: o que já foi sugerido/feito, para a IA
 --        NÃO repetir e poder evoluir as orientações
 -- ---------------------------------------------
-CREATE OR REPLACE FUNCTION sameka_embaplan_ad_context_for_ai(
+CREATE OR REPLACE FUNCTION embaplan_ad_context_for_ai(
   p_anuncio_indice TEXT
 )
 RETURNS JSONB
@@ -104,12 +104,12 @@ AS $$
   );
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_embaplan_ad_context_for_ai(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_ad_context_for_ai(TEXT) TO authenticated;
 
 -- ---------------------------------------------
 -- 2) GESTÃO: apagar uma recomendação
 -- ---------------------------------------------
-CREATE OR REPLACE FUNCTION sameka_embaplan_delete_recommendation(
+CREATE OR REPLACE FUNCTION embaplan_delete_recommendation(
   p_id BIGINT
 )
 RETURNS VOID
@@ -122,11 +122,11 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_embaplan_delete_recommendation(BIGINT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_delete_recommendation(BIGINT) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- DROP FUNCTION IF EXISTS sameka_embaplan_ad_context_for_ai(TEXT);
--- DROP FUNCTION IF EXISTS sameka_embaplan_delete_recommendation(BIGINT);
+-- DROP FUNCTION IF EXISTS embaplan_ad_context_for_ai(TEXT);
+-- DROP FUNCTION IF EXISTS embaplan_delete_recommendation(BIGINT);
 -- NOTIFY pgrst, 'reload schema';

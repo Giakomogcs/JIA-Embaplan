@@ -20,7 +20,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT \n  session_id, \n  MIN(created_at) as data_inicio,\n  (SELECT message->>'content' -- Extrai apenas o texto da mensagem\n   FROM embaplan_chat_message embaplan_cm2 \n   WHERE embaplan_cm2.session_id = embaplan_cm.session_id \n   AND embaplan_cm2.message->>'type' = 'human' -- Filtra dentro do JSON da coluna 'message'\n   ORDER BY id DESC LIMIT 1) as titulo\nFROM embaplan_chat_message embaplan_cm\nGROUP BY session_id\nORDER BY data_inicio DESC;",
+        "query": "SELECT \n  session_id, \n  MIN(created_at) as data_inicio,\n  (SELECT message->>'content' -- Extrai apenas o texto da mensagem\n   FROM embaplan_chat_message embaplan_cm2 \n   WHERE embaplan_cm2.session_id = embaplan_cm.session_id \n   AND embaplan_cm2.message->>'type' = 'human' -- Filtra dentro do JSON da coluna 'message'\n   ORDER BY id DESC LIMIT 1) as titulo,\n  COALESCE((\n    SELECT json_agg(tag) \n    FROM embaplan_chat_tags \n    WHERE session_id = embaplan_cm.session_id\n  ), '[]'::json) as tags\nFROM embaplan_chat_message embaplan_cm\nGROUP BY session_id\nORDER BY data_inicio DESC;",
         "options": {}
       },
       "id": "abf1f152-8e4b-4a56-afee-8538e50d2ba5",

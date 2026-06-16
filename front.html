@@ -1616,9 +1616,13 @@
       body.dashboard-open #sidebar-header {
         display: none;
       }
+      body.dashboard-open #tagFilterBar {
+        display: none;
+      }
       body.dashboard-open #dashboardSidebarNote {
         display: flex !important;
       }
+
 
       @media (min-width: 769px) {
         body.dashboard-open .dashboard-overlay.active {
@@ -2951,7 +2955,700 @@
 
       /* ========== END VISUAL SECTION BOXES ========== */
 
-      /* IMPROVED INPUT AREA */
+      /* ============================================
+           CHAT TAGS (PRD-4)
+           ============================================ */
+      .tag-filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 10px;
+        margin: 0 10px 6px;
+        background: var(--bg-message-assistant);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+      }
+      .tag-filter-bar .tf-icon {
+        flex-shrink: 0;
+        color: var(--text-secondary);
+      }
+      .tag-filter-bar .tf-icon svg {
+        width: 14px;
+        height: 14px;
+      }
+      #tagFilterInput {
+        flex: 1;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        font-size: 0.8rem;
+        outline: none;
+        min-width: 0;
+      }
+      #tagFilterInput::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.6;
+      }
+      .tag-filter-clear {
+        flex-shrink: 0;
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+        padding: 2px;
+        display: none;
+      }
+      .tag-filter-clear.visible {
+        display: block;
+      }
+      .session-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        margin-top: 5px;
+      }
+      .session-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 0.62rem;
+        font-weight: 700;
+        padding: 2px 7px;
+        border-radius: 999px;
+        white-space: nowrap;
+        max-width: 110px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        letter-spacing: 0.2px;
+        text-transform: lowercase;
+      }
+      .session-tag .tag-remove {
+        display: none;
+        background: none;
+        border: none;
+        color: inherit;
+        font-size: 10px;
+        cursor: pointer;
+        padding: 0;
+        line-height: 1;
+        opacity: 0.7;
+      }
+      .session-tag .tag-remove:hover {
+        opacity: 1;
+      }
+      .session-item:hover .session-tag .tag-remove {
+        display: inline;
+      }
+      .session-tag-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 3px;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.15s;
+      }
+      .session-tag-btn:hover {
+        color: var(--color-primary);
+        background: rgba(122, 1, 1, 0.08);
+      }
+      .session-tag-btn svg {
+        width: 13px;
+        height: 13px;
+      }
+      /* Tag Popover */
+      .tag-popover-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 3000;
+        display: none;
+      }
+      .tag-popover-backdrop.active {
+        display: block;
+      }
+      .tag-popover {
+        position: fixed;
+        z-index: 3001;
+        background: var(--bg-chat);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: var(--shadow-lg);
+        padding: 12px;
+        width: 260px;
+        max-height: 320px;
+        overflow-y: auto;
+        display: none;
+      }
+      .tag-popover.active {
+        display: block;
+      }
+      .tag-popover-title {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 8px;
+      }
+      .tag-popover-input-row {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+      }
+      #tagPopoverInput {
+        flex: 1;
+        padding: 6px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        font-size: 0.8rem;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        outline: none;
+      }
+      #tagPopoverInput:focus {
+        border-color: var(--color-primary);
+      }
+      .tag-popover-add-btn {
+        padding: 6px 10px;
+        border: none;
+        border-radius: 6px;
+        background: var(--color-primary);
+        color: #fff;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        white-space: nowrap;
+      }
+      .tag-popover-add-btn:hover {
+        background: var(--color-primary-hover);
+      }
+      .tag-popover-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 8px;
+      }
+      .tag-popover-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.74rem;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 999px;
+        background: rgba(122, 1, 1, 0.08);
+        color: var(--color-primary);
+        cursor: default;
+      }
+      .tag-popover-chip button {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0;
+        opacity: 0.6;
+        line-height: 1;
+      }
+      .tag-popover-chip button:hover {
+        opacity: 1;
+      }
+      .tag-popover-all-title {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        margin: 8px 0 4px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-color);
+      }
+      .tag-popover-all-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+      }
+      .tag-popover-global {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-size: 0.7rem;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.12s;
+      }
+      .tag-popover-global:hover {
+        border-color: var(--color-primary);
+        background: rgba(122, 1, 1, 0.05);
+      }
+      .tag-popover-global .tag-count {
+        font-size: 0.6rem;
+        color: var(--text-secondary);
+        font-weight: 700;
+      }
+      .tag-popover-global-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        font-size: 0.7rem;
+        transition: all 0.12s;
+      }
+      .tag-popover-global-chip:hover {
+        border-color: var(--color-primary);
+        background: rgba(122, 1, 1, 0.03);
+      }
+      .tag-popover-global-chip .tag-click-target {
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        font-weight: 600;
+      }
+      .tag-popover-global-chip .tag-action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        opacity: 0;
+        width: 14px;
+        height: 14px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--text-secondary);
+        transition: opacity 0.15s, color 0.15s;
+      }
+      .tag-popover-global-chip:hover .tag-action-btn {
+        opacity: 0.6;
+      }
+      .tag-popover-global-chip .tag-action-btn:hover {
+        opacity: 1;
+      }
+      .tag-popover-global-chip .tag-edit-btn:hover {
+        color: var(--color-primary);
+      }
+      .tag-popover-global-chip .tag-delete-btn:hover {
+        color: #ef4444;
+      }
+
+      @keyframes ac-spin {
+        to { transform: rotate(360deg); }
+      }
+
+
+      /* Tag toast */
+      .tag-toast {
+        position: fixed;
+        bottom: 80px;
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: var(--bg-chat);
+        border: 1px solid var(--border-color);
+        border-radius: 10px;
+        box-shadow: var(--shadow-lg);
+        padding: 10px 16px;
+        z-index: 4000;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        opacity: 0;
+        transition: all 0.3s ease;
+        pointer-events: none;
+      }
+      .tag-toast.visible {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+        pointer-events: auto;
+      }
+      .tag-toast button {
+        padding: 4px 10px;
+        border-radius: 6px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-input);
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        color: var(--text-primary);
+        transition: all 0.12s;
+      }
+      .tag-toast button.primary {
+        background: var(--color-primary);
+        color: #fff;
+        border-color: var(--color-primary);
+      }
+      .tag-toast button:hover {
+        opacity: 0.85;
+      }
+      /* ============================================
+           QUICK INPUT MODAL (PRD-1)
+           ============================================ */
+      .qi-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        z-index: 5000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        animation: fadeIn 0.2s;
+      }
+      .qi-modal-backdrop.active {
+        display: flex;
+      }
+      .qi-modal {
+        background: var(--bg-chat);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        box-shadow: var(--shadow-lg);
+        width: 480px;
+        max-width: 92vw;
+        max-height: 85vh;
+        overflow-y: auto;
+        animation: slideUp 0.2s ease;
+      }
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .qi-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 16px 20px;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .qi-header h3 {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--color-wine);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0;
+      }
+      [data-theme="dark"] .qi-header h3 {
+        color: var(--color-primary);
+      }
+      .qi-close {
+        background: transparent;
+        border: none;
+        font-size: 18px;
+        color: var(--text-secondary);
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 6px;
+        line-height: 1;
+      }
+      .qi-close:hover {
+        background: var(--color-light-gray);
+      }
+      .qi-body {
+        padding: 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+      }
+      .qi-field {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .qi-field label {
+        font-size: 0.78rem;
+        font-weight: 700;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .qi-field label .qi-req {
+        color: var(--color-primary);
+      }
+      /* Autocomplete (searchable dropdown) */
+      .qi-ac {
+        position: relative;
+      }
+      .qi-ac-selected {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 6px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-input);
+        min-height: 38px;
+        align-items: center;
+        cursor: text;
+        transition: border-color 0.15s;
+      }
+      .qi-ac-selected:focus-within {
+        border-color: var(--color-primary);
+      }
+      .qi-ac-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 0.76rem;
+        font-weight: 700;
+        background: rgba(122, 1, 1, 0.1);
+        color: var(--color-primary);
+        white-space: nowrap;
+      }
+      .qi-ac-pill button {
+        background: none;
+        border: none;
+        color: inherit;
+        cursor: pointer;
+        font-size: 11px;
+        padding: 0;
+        line-height: 1;
+        opacity: 0.6;
+      }
+      .qi-ac-pill button:hover {
+        opacity: 1;
+      }
+      .qi-ac-input {
+        flex: 1;
+        min-width: 60px;
+        border: none;
+        background: transparent;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        outline: none;
+        font-weight: 500;
+        padding: 2px 4px;
+      }
+      .qi-ac-input::placeholder {
+        color: var(--text-secondary);
+        opacity: 0.5;
+      }
+      .qi-ac-input:empty::before {
+        content: attr(data-placeholder);
+        color: var(--text-secondary);
+        opacity: 0.5;
+        pointer-events: none;
+      }
+      .qi-ac-clear {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 0 2px;
+        line-height: 1;
+        flex-shrink: 0;
+        display: none;
+      }
+      .qi-ac-clear.visible {
+        display: block;
+      }
+      .qi-ac-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        margin-top: 4px;
+        background: var(--bg-chat);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        box-shadow: var(--shadow-md);
+        max-height: 180px;
+        overflow-y: auto;
+        z-index: 10;
+        display: none;
+      }
+      .qi-ac-dropdown.open {
+        display: block;
+      }
+      .qi-ac-option {
+        padding: 8px 12px;
+        font-size: 0.84rem;
+        cursor: pointer;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.1s;
+      }
+      .qi-ac-option:hover,
+      .qi-ac-option.highlighted {
+        background: rgba(122, 1, 1, 0.06);
+      }
+      .qi-ac-option.selected {
+        font-weight: 700;
+        color: var(--color-primary);
+      }
+      .qi-ac-option.selected::before {
+        content: "✓";
+        font-size: 0.75rem;
+        font-weight: 800;
+        flex-shrink: 0;
+      }
+      .qi-ac-option .opt-sub {
+        font-size: 0.7rem;
+        color: var(--text-secondary);
+        margin-left: auto;
+        white-space: nowrap;
+      }
+      .qi-ac-empty {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        text-align: center;
+      }
+      .qi-ac-all-btn {
+        padding: 7px 12px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        border: none;
+        background: transparent;
+        color: var(--color-primary);
+        width: 100%;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .qi-ac-all-btn:hover {
+        background: rgba(122, 1, 1, 0.04);
+      }
+      /* Text input for campanha/produto */
+      .qi-field input[type="text"] {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.88rem;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        outline: none;
+        font-weight: 500;
+        transition: border-color 0.15s;
+      }
+      .qi-field input[type="text"]:focus {
+        border-color: var(--color-primary);
+      }
+      .qi-field textarea {
+        padding: 8px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        font-size: 0.88rem;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        outline: none;
+        font-family: inherit;
+        resize: vertical;
+        min-height: 48px;
+        max-height: 80px;
+        transition: border-color 0.15s;
+      }
+      .qi-field textarea:focus {
+        border-color: var(--color-primary);
+      }
+      /* Chips (focus options) */
+      .qi-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .qi-chip {
+        padding: 6px 12px;
+        border: 1px solid var(--border-color);
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: var(--bg-input);
+        color: var(--text-secondary);
+        transition: all 0.15s;
+        user-select: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .qi-chip:hover {
+        border-color: var(--color-primary);
+        color: var(--text-primary);
+      }
+      .qi-chip.selected {
+        background: var(--color-primary);
+        color: #fff;
+        border-color: var(--color-primary);
+      }
+      .qi-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        padding: 12px 20px;
+        border-top: 1px solid var(--border-color);
+      }
+      .qi-btn {
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      .qi-btn-cancel {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+      }
+      .qi-btn-cancel:hover {
+        background: var(--color-light-gray);
+      }
+      .qi-btn-confirm {
+        background: var(--color-primary);
+        border: none;
+        color: #fff;
+      }
+      .qi-btn-confirm:hover {
+        background: var(--color-primary-hover);
+      }
+      .qi-btn-confirm:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      /* Analyze button */
+      .btn-analyze {
+        background: transparent;
+        border: 2px solid var(--color-primary);
+        color: var(--color-primary);
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+      .btn-analyze:hover {
+        background: var(--color-primary);
+        color: #fff;
+      }
+      /* ============================================
+           IMPROVED INPUT AREA */
       #messageInput {
         flex: 1;
         padding: 14px 20px;
@@ -3528,6 +4225,12 @@
               <span>Nova conversa</span>
             </button>
           </div>
+          <!-- Tag Filter Bar -->
+          <div class="tag-filter-bar" id="tagFilterBar">
+            <span class="tf-icon"><i data-lucide="tag"></i></span>
+            <input type="text" id="tagFilterInput" placeholder="Filtrar por tag ou nome..." />
+            <button class="tag-filter-clear" id="tagFilterClear" title="Limpar filtro">✕</button>
+          </div>
           <div id="sessionList">
             <!-- Sessões carregadas aqui -->
           </div>
@@ -3664,6 +4367,14 @@
                 >
                   <i data-lucide="paperclip"></i>
                 </button>
+                <button
+                  type="button"
+                  class="btn-analyze"
+                  id="analyzeBtn"
+                  title="Analisar com contexto rápido"
+                >
+                  <i data-lucide="search"></i>
+                </button>
 
                 <button
                   type="submit"
@@ -3724,6 +4435,45 @@
         </div>
       </div>
     </div>
+
+    <!-- Tag Delete Confirm Modal -->
+    <div class="confirm-modal-backdrop" id="tagDeleteModal">
+      <div class="confirm-modal">
+        <h3 class="confirm-title">Excluir Tag</h3>
+        <p class="confirm-text">
+          Tem certeza que deseja excluir a tag <strong id="tagDeleteTarget"></strong> permanentemente?
+          Ela será removida de todas as conversas atreladas.
+        </p>
+        <div class="confirm-actions">
+          <button class="btn-modal btn-cancel" id="tagDeleteCancelBtn">
+            Cancelar
+          </button>
+          <button class="btn-modal btn-confirm" id="tagDeleteConfirmBtn" style="background-color: #ef4444;">
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tag Edit/Rename Modal -->
+    <div class="confirm-modal-backdrop" id="tagRenameModal">
+      <div class="confirm-modal">
+        <h3 class="confirm-title">Editar Tag</h3>
+        <p class="confirm-text" style="margin-bottom: 12px;">
+          Altere o nome da tag. Ela será alterada em todas as conversas onde estiver atrelada.
+        </p>
+        <input type="text" id="tagRenameInput" class="login-input" style="margin-bottom: 15px;" placeholder="Nome da tag" />
+        <div class="confirm-actions">
+          <button class="btn-modal btn-cancel" id="tagRenameCancelBtn">
+            Cancelar
+          </button>
+          <button class="btn-modal btn-confirm" id="tagRenameConfirmBtn">
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+
 
     <!-- Ad History / Timeline Modal -->
     <div class="confirm-modal-backdrop" id="historyModal">
@@ -3848,6 +4598,78 @@
       </div>
     </div>
 
+    <!-- Tag Popover (floating) -->
+    <div class="tag-popover-backdrop" id="tagPopoverBackdrop"></div>
+    <div class="tag-popover" id="tagPopover">
+      <div class="tag-popover-title">🏷️ Tags desta conversa</div>
+      <div class="tag-popover-input-row">
+        <input type="text" id="tagPopoverInput" placeholder="Adicionar tag..." />
+        <button class="tag-popover-add-btn" id="tagPopoverAddBtn">+</button>
+      </div>
+      <div class="tag-popover-list" id="tagPopoverList">
+        <!-- Tags atuais aparecem aqui -->
+      </div>
+      <div class="tag-popover-all-title">Todas as minhas tags</div>
+      <div class="tag-popover-all-list" id="tagPopoverAllList">
+        <!-- Tags globais do usuário -->
+      </div>
+    </div>
+
+    <!-- Quick Input Modal (PRD-1) -->
+    <div class="qi-modal-backdrop" id="qiModalBackdrop">
+      <div class="qi-modal">
+        <div class="qi-header">
+          <h3>🔍 Analisar com contexto</h3>
+          <button class="qi-close" id="qiCloseBtn">✕</button>
+        </div>
+        <div class="qi-body">
+          <div class="qi-field">
+            <label><i data-lucide="store" style="width:12px;height:12px"></i> Loja <span class="qi-req">*</span></label>
+            <div class="qi-ac" id="qiLojaAC" data-multi="false" data-field="loja">
+              <div class="qi-ac-selected"><span class="qi-ac-input" contenteditable="true" data-placeholder="Todas as lojas"></span></div>
+              <button class="qi-ac-clear" title="Limpar">✕</button>
+              <div class="qi-ac-dropdown"></div>
+            </div>
+          </div>
+          <div class="qi-field">
+            <label><i data-lucide="search" style="width:12px;height:12px"></i> Campanha / Anúncio</label>
+            <div class="qi-ac" id="qiCampanhaAC" data-multi="true" data-field="campanha">
+              <div class="qi-ac-selected"><span class="qi-ac-input" contenteditable="true" data-placeholder="Buscar anúncio..."></span></div>
+              <button class="qi-ac-clear" title="Limpar">✕</button>
+              <div class="qi-ac-dropdown"></div>
+            </div>
+          </div>
+          <div class="qi-field">
+            <label><i data-lucide="package" style="width:12px;height:12px"></i> Produto / Base</label>
+            <div class="qi-ac" id="qiProdutoAC" data-multi="true" data-field="produto">
+              <div class="qi-ac-selected"><span class="qi-ac-input" contenteditable="true" data-placeholder="Buscar produto..."></span></div>
+              <button class="qi-ac-clear" title="Limpar">✕</button>
+              <div class="qi-ac-dropdown"></div>
+            </div>
+          </div>
+          <div class="qi-field">
+            <label><i data-lucide="target" style="width:12px;height:12px"></i> Foco da Análise <span class="qi-req">*</span></label>
+            <div class="qi-chips" id="qiFocoChips">
+              <button class="qi-chip selected" data-foco="performance">📊 Performance Geral</button>
+              <button class="qi-chip" data-foco="lucro">💰 Lucro / Margem</button>
+              <button class="qi-chip" data-foco="acos">📉 ACOS / CTR</button>
+              <button class="qi-chip" data-foco="escala">🚀 Oportunidade de Escala</button>
+              <button class="qi-chip" data-foco="problemas">🛑 Problemas / Ralo</button>
+              <button class="qi-chip" data-foco="comparar">🏷️ Comparar Lojas</button>
+            </div>
+          </div>
+          <div class="qi-field">
+            <label><i data-lucide="message-square" style="width:12px;height:12px"></i> Observações</label>
+            <textarea id="qiObsInput" placeholder="Ex: quero saber se posso aumentar verba sem perder margem..."></textarea>
+          </div>
+        </div>
+        <div class="qi-footer">
+          <button class="qi-btn qi-btn-cancel" id="qiCancelBtn">Cancelar</button>
+          <button class="qi-btn qi-btn-confirm" id="qiConfirmBtn">🔍 Analisar</button>
+        </div>
+      </div>
+    </div>
+
     <script>
       lucide.createIcons();
       marked.setOptions({
@@ -3878,6 +4700,13 @@
       const ADD_RECS_URL = `${API_BASE}/embaplan-add-recommendations`;
       const GEN_RECS_URL = `${API_BASE}/embaplan-generate-recommendations`;
       const REC_DELETE_URL = `${API_BASE}/embaplan-recommendation-delete`;
+      const TAG_ADD_URL = `${API_BASE}/embaplan-add-tag`;
+      const TAG_REMOVE_URL = `${API_BASE}/embaplan-remove-tag`;
+      const TAG_LIST_URL = `${API_BASE}/embaplan-list-tags`;
+      const TAG_SESSION_URL = `${API_BASE}/embaplan-session-tags`;
+      const TAG_RENAME_URL = `${API_BASE}/embaplan-rename-tag`;
+      const TAG_DELETE_URL = `${API_BASE}/embaplan-delete-tag`;
+      const AUTOCOMPLETE_URL = `${API_BASE}/embaplan-autocomplete`;
 
       // ============================================
       // ÍCONES SVG MONOCROMÁTICOS (sem emojis)
@@ -4405,6 +5234,12 @@
           console.error("❌ Error fetching sessions:", error);
           return [];
         }
+      }
+      // Helper: fetch sessions + load tags for all + re-render
+      async function refreshSessions() {
+        sessions = await fetchSessions();
+        await Promise.all(sessions.map(s => loadSessionTags(s.session_id)));
+        renderSessionList();
       }
       async function fetchHistory(sessionId) {
         try {
@@ -5597,13 +6432,12 @@
             const success = await deleteSession(sessionToDeleteId);
             if (success) {
               // 1. Refresh list from server (removes deleted, updates order)
-              sessions = await fetchSessions();
+              await refreshSessions();
 
               // 2. Check if we deleted the current session
               if (currentSessionId === sessionToDeleteId) {
                 if (sessions.length > 0) {
                   // Switch to the most recent (first) session
-                  renderSessionList(); // Update list first
                   loadSession(sessions[0].session_id);
                 } else {
                   // No sessions left -> Start New Chat
@@ -5659,8 +6493,7 @@
 
             // REFRESH DATA (RESET INTERFACE)
             console.log("🔄 Refreshing app data after reset...");
-            sessions = await fetchSessions(); // Update sidebar
-            renderSessionList();
+            await refreshSessions();
             if (deleteConversations) {
               startNewChat(); // Clear current view only if conversations were wiped
             }
@@ -5786,12 +6619,29 @@
         currentSessionId = sessionId;
         clearChatArea();
         showSkeletonMessages();
-        const history = await fetchHistory(sessionId);
+        // Load tags for this session in parallel with history
+        const [history] = await Promise.all([
+          fetchHistory(sessionId),
+          loadSessionTags(sessionId)
+        ]);
         clearChatArea(); // Shows empty state by default
 
         if (history && history.length > 0) {
           hideEmptyState(); // Hide if we have content
           history.forEach((message) => renderMessage(message));
+          // Suggest tags from first user message if session has no tags yet
+          const existingTags = sessionTagsCache[sessionId] || [];
+          if (existingTags.length === 0 && history.length >= 1) {
+            const firstUserMsg = history.find(m => m.role === "user");
+            if (firstUserMsg) {
+              const suggested = suggestTagsFromMessage(firstUserMsg.content || "");
+              if (suggested.length > 0) {
+                setTimeout(() => {
+                  showTagToast(`Sugerir tags: ${suggested.map(t => "#" + t).join(" ")}`, suggested);
+                }, 1500);
+              }
+            }
+          }
         } else {
           showEmptyState(); // Explicit show if empty
         }
@@ -5977,6 +6827,7 @@
         }
 
         sessions = await fetchSessions();
+        await Promise.all(sessions.map(s => loadSessionTags(s.session_id)));
         renderSessionList();
       }
       // Attach - IMPLEMENTED FILE UPLOAD
@@ -6094,10 +6945,14 @@
         appStarted = true;
 
         checkHealth();
+        setupTagFilter();
+        setupQiAutocompletes();
 
         console.log("🚀 Starting App...");
         showSkeletonSessions();
         sessions = await fetchSessions();
+        // Load tags for all sessions
+        await Promise.all(sessions.map(s => loadSessionTags(s.session_id)));
         console.log("📋 Total sessions:", sessions.length);
         if (sessions.length > 0 && !currentSessionId) {
           await loadSession(sessions[0].session_id);
@@ -6683,6 +7538,8 @@
       // DASHBOARD (Épico 3 do PRD)
       // ============================================
       let dashboardData = [];
+      let dashboardDataLoading = false;
+      let dashboardDataLoaded = false;
       let dashboardState = {
         tab: "home",
         benchKey: null,
@@ -6690,6 +7547,7 @@
         cmpProdKey: null,
       };
       let dashboardSidebarWasClosed = false;
+
 
       function openDashboard() {
         // Mantém o sidebar visível ao lado do painel (no desktop).
@@ -6717,6 +7575,10 @@
         const content = document.getElementById("dashboardContent");
         content.innerHTML =
           '<div class="history-empty">Carregando dados…</div>';
+        
+        dashboardDataLoading = true;
+        updateACDropdownsLoadingState();
+
         try {
           const url = loja
             ? `${OVERVIEW_URL}?loja=${encodeURIComponent(loja)}`
@@ -6735,6 +7597,7 @@
             }
           }
           dashboardData = Array.isArray(data.anuncios) ? data.anuncios : [];
+          dashboardDataLoaded = true;
           populateLojaFilter(dashboardData, loja);
           renderDashboard(dashboardData);
         } catch (err) {
@@ -6742,8 +7605,12 @@
             '<div class="history-empty">Não foi possível carregar o dashboard.<br><small>' +
             (err && err.message ? err.message : "") +
             "<br>Verifique se há ao menos um upload de planilha registrado.</small></div>";
+        } finally {
+          dashboardDataLoading = false;
+          updateACDropdownsLoadedState();
         }
       }
+
 
       function populateLojaFilter(rows, current) {
         const sel = document.getElementById("dashboardLojaFilter");
@@ -7633,6 +8500,820 @@
         if (!loja) return dashboardData;
         return dashboardData.filter((r) => r.loja === loja);
       }
+
+      // ============================================
+      // CHAT TAGS (PRD-4) — In-memory store + n8n
+      // ============================================
+      const TAG_COLORS = [
+        "#7a0101","#2563eb","#059669","#d97706","#7c3aed",
+        "#0891b2","#be185d","#65a30d","#c2410c","#4f46e5",
+      ];
+      let sessionTagsCache = {}; // { sessionId: [tag1, tag2] }
+      let allUserTags = [];      // [{tag, count}]
+      let tagPopoverSessionId = null;
+
+      function tagColor(str) {
+        let h = 0;
+        for (let i = 0; i < str.length; i++) {
+          h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+        }
+        return TAG_COLORS[Math.abs(h) % TAG_COLORS.length];
+      }
+
+      async function apiTag(method, url, body) {
+        try {
+          const opts = { method, headers: { "Content-Type": "application/json" } };
+          if (body) opts.body = JSON.stringify(body);
+          const res = await fetch(url, opts);
+          if (!res.ok) return null;
+          const text = await res.text();
+          try { return JSON.parse(text); } catch (_) { return text; }
+        } catch (e) { console.warn("Tag API error:", e); return null; }
+      }
+
+      async function loadAllUserTags() {
+        const data = await apiTag("GET", TAG_LIST_URL);
+        if (Array.isArray(data)) {
+          allUserTags = data;
+        } else if (data && Array.isArray(data.tags)) {
+          allUserTags = data.tags;
+        } else {
+          allUserTags = [];
+        }
+      }
+
+      async function loadSessionTags(sessionId) {
+        const data = await apiTag("GET", TAG_SESSION_URL + "?session_id=" + encodeURIComponent(sessionId));
+        let tags = [];
+        if (Array.isArray(data)) {
+          tags = data.map(t => typeof t === "string" ? t : t.tag);
+        } else if (data && Array.isArray(data.tags)) {
+          tags = data.tags;
+        }
+        sessionTagsCache[sessionId] = tags.filter(Boolean);
+        return tags;
+      }
+
+      async function addTag(sessionId, tag) {
+        tag = tag.toLowerCase().trim().replace(/[^a-z0-9à-ÿ\-\s]/gi, "").replace(/\s+/g, " ");
+        if (!tag || tag.length < 1) return;
+        const existing = sessionTagsCache[sessionId] || [];
+        if (existing.length >= 5) {
+          showTagToast("⚠️ Máximo de 5 tags por conversa.", []);
+          return;
+        }
+        if (existing.includes(tag)) return;
+        await apiTag("POST", TAG_ADD_URL, { session_id: sessionId, tag });
+        await loadSessionTags(sessionId);
+        await loadAllUserTags();
+        renderSessionList();
+      }
+
+      async function removeTag(sessionId, tag) {
+        await apiTag("POST", TAG_REMOVE_URL, { session_id: sessionId, tag });
+        await loadSessionTags(sessionId);
+        await loadAllUserTags();
+        renderSessionList();
+      }
+
+      async function renameTagGlobal(oldTag, newTag) {
+        newTag = newTag.toLowerCase().trim().replace(/[^a-z0-9à-ÿ\-\s]/gi, "").replace(/\s+/g, " ");
+        if (!newTag || newTag === oldTag) return;
+        await apiTag("POST", TAG_RENAME_URL, { old_tag: oldTag, new_tag: newTag });
+        
+        // Reload all tags to keep UI synchronized
+        if (sessions && sessions.length > 0) {
+          await Promise.all(sessions.map(s => loadSessionTags(s.session_id)));
+        }
+        await loadAllUserTags();
+        renderSessionList();
+        if (tagPopoverSessionId) {
+          renderTagPopover();
+        }
+      }
+
+      async function deleteTagGlobal(tag) {
+        await apiTag("POST", TAG_DELETE_URL, { tag });
+        
+        // Reload all tags to keep UI synchronized
+        if (sessions && sessions.length > 0) {
+          await Promise.all(sessions.map(s => loadSessionTags(s.session_id)));
+        }
+        await loadAllUserTags();
+        renderSessionList();
+        if (tagPopoverSessionId) {
+          renderTagPopover();
+        }
+      }
+
+
+      // Toast for tag suggestions
+      function showTagToast(message, suggestedTags) {
+        let toast = document.getElementById("tagToast");
+        if (!toast) {
+          toast = document.createElement("div");
+          toast.id = "tagToast";
+          toast.className = "tag-toast";
+          document.body.appendChild(toast);
+        }
+        let btnsHtml = "";
+        if (suggestedTags.length > 0) {
+          btnsHtml = '<button class="primary" onclick="applyTagSuggestion()">Aplicar</button><button onclick="dismissTagToast()">Ignorar</button>';
+        }
+        toast.innerHTML = `<span>🏷️ ${message}</span>${btnsHtml}`;
+        toast._suggestedTags = suggestedTags;
+        toast.classList.add("visible");
+        clearTimeout(toast._timer);
+        toast._timer = setTimeout(() => toast.classList.remove("visible"), 5000);
+      }
+
+      window.applyTagSuggestion = function() {
+        const toast = document.getElementById("tagToast");
+        if (toast && toast._suggestedTags && currentSessionId) {
+          toast._suggestedTags.forEach(t => addTag(currentSessionId, t));
+        }
+        dismissTagToast();
+      };
+
+      window.dismissTagToast = function() {
+        const toast = document.getElementById("tagToast");
+        if (toast) toast.classList.remove("visible");
+      };
+
+      // Auto-suggest tags from first message
+      function suggestTagsFromMessage(text) {
+        const suggestions = [];
+        const lower = text.toLowerCase();
+        // Store names
+        ["shopee", "mercado livre", "ml", "amazon", "shein"].forEach(name => {
+          if (lower.includes(name)) suggestions.push(name.replace("mercado livre", "ml"));
+        });
+        // Product/base patterns
+        const baseMatch = lower.match(/base\s+\w+/);
+        if (baseMatch) suggestions.push(baseMatch[0]);
+        const qcMatch = lower.match(/qc\s+\d+/);
+        if (qcMatch) suggestions.push(qcMatch[0]);
+        // Keywords
+        ["acos", "lance", "orçamento", "escala", "lucro", "roas"].forEach(kw => {
+          if (lower.includes(kw)) suggestions.push(kw);
+        });
+        return [...new Set(suggestions)].slice(0, 3);
+      }
+
+      // Tag filter logic
+      function setupTagFilter() {
+        const input = document.getElementById("tagFilterInput");
+        const clearBtn = document.getElementById("tagFilterClear");
+        if (!input) return;
+
+        input.addEventListener("input", () => {
+          clearBtn.classList.toggle("visible", input.value.length > 0);
+          renderSessionList();
+        });
+        clearBtn.addEventListener("click", () => {
+          input.value = "";
+          clearBtn.classList.remove("visible");
+          renderSessionList();
+        });
+      }
+
+      function filterSessionsByQuery(sessionsList) {
+        const input = document.getElementById("tagFilterInput");
+        const q = (input ? input.value : "").toLowerCase().trim().replace(/^#/, "");
+        if (!q) return sessionsList;
+        const terms = q.split(/\s+/).filter(Boolean);
+        return sessionsList.filter(s => {
+          const title = (typeof s.titulo === "string" ? s.titulo : (s.titulo && s.titulo.content) || "").toLowerCase();
+          const tags = (sessionTagsCache[s.session_id] || []).join(" ").toLowerCase();
+          return terms.every(t => title.includes(t) || tags.includes(t));
+        });
+      }
+
+      // Render session tags in session list (enhances existing renderSessionList)
+      function renderSessionTags(sessionId, container) {
+        const tags = sessionTagsCache[sessionId] || [];
+        if (tags.length === 0) return;
+        const tagsDiv = document.createElement("div");
+        tagsDiv.className = "session-tags";
+        tags.forEach(tag => {
+          const color = tagColor(tag);
+          const chip = document.createElement("span");
+          chip.className = "session-tag";
+          chip.style.background = color + "18";
+          chip.style.color = color;
+          chip.style.border = `1px solid ${color}33`;
+          chip.title = tag;
+          chip.innerHTML = `<span>${escapeHtml(tag)}</span><button class="tag-remove" data-tag="${escapeHtml(tag)}" title="Remover tag">✕</button>`;
+          chip.querySelector(".tag-remove").addEventListener("click", (e) => {
+            e.stopPropagation();
+            removeTag(sessionId, tag);
+          });
+          tagsDiv.appendChild(chip);
+        });
+        container.appendChild(tagsDiv);
+      }
+
+      // Monkey-patch renderSessionList to include tags and filtering
+      const _originalRenderSessionList = renderSessionList;
+      renderSessionList = function() {
+        // Filter sessions first
+        const filtered = filterSessionsByQuery(sessions);
+        elements.sessionList.innerHTML = "";
+        if (filtered.length === 0) {
+          const input = document.getElementById("tagFilterInput");
+          const q = input ? input.value.trim() : "";
+          elements.sessionList.innerHTML = q
+            ? `<div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">Nenhuma conversa com "${escapeHtml(q)}"</div>`
+            : '<div style="color: #999; text-align: center; padding: 20px; font-size: 12px;">Nenhuma conversa ainda</div>';
+          return;
+        }
+        filtered.forEach((session) => {
+          const sessionDiv = document.createElement("div");
+          sessionDiv.className = "session-item";
+          if (session.session_id === currentSessionId) {
+            sessionDiv.classList.add("active");
+          }
+          let titulo = "Nova conversa";
+          if (session.titulo) {
+            if (typeof session.titulo === "object" && session.titulo.content) {
+              titulo = session.titulo.content;
+            } else if (typeof session.titulo === "string") {
+              titulo = session.titulo;
+            }
+          }
+          const titleDiv = document.createElement("div");
+          titleDiv.className = "session-content";
+          titleDiv.innerHTML = `
+            <div class="session-title">${escapeHtml(titulo)}</div>
+            <div class="session-date">${formatDate(session.data_inicio)}</div>
+          `;
+          // Insert tags below title
+          renderSessionTags(session.session_id, titleDiv);
+
+          sessionDiv.appendChild(titleDiv);
+
+          // Tag button
+          const tagBtn = document.createElement("button");
+          tagBtn.className = "session-tag-btn";
+          tagBtn.title = "Gerenciar tags";
+          tagBtn.innerHTML = svgIcon("flag", "");
+          tagBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openTagPopover(session.session_id, tagBtn);
+          });
+          sessionDiv.appendChild(tagBtn);
+
+          // Delete button
+          const delBtn = document.createElement("button");
+          delBtn.className = "delete-btn";
+          delBtn.innerHTML = '<i data-lucide="x"></i>';
+          delBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            handleDeleteSession(session.session_id, e);
+          });
+          sessionDiv.appendChild(delBtn);
+
+          sessionDiv.addEventListener("click", (e) => {
+            if (!e.target.classList.contains("delete-btn") && !e.target.closest(".session-tag-btn")) {
+              loadSession(session.session_id);
+            }
+          });
+          elements.sessionList.appendChild(sessionDiv);
+        });
+        lucide.createIcons();
+      };
+
+      // Tag Popover
+      function openTagPopover(sessionId, anchorBtn) {
+        tagPopoverSessionId = sessionId;
+        const popover = document.getElementById("tagPopover");
+        const backdrop = document.getElementById("tagPopoverBackdrop");
+        popover.classList.add("active");
+        backdrop.classList.add("active");
+
+        // Position near the button
+        const rect = anchorBtn.getBoundingClientRect();
+        popover.style.top = Math.min(rect.top, window.innerHeight - 340) + "px";
+        popover.style.left = Math.min(rect.right + 6, window.innerWidth - 270) + "px";
+
+        renderTagPopover();
+      }
+
+      function closeTagPopover() {
+        document.getElementById("tagPopover").classList.remove("active");
+        document.getElementById("tagPopoverBackdrop").classList.remove("active");
+        tagPopoverSessionId = null;
+      }
+
+      async function renderTagPopover() {
+        const sid = tagPopoverSessionId;
+        if (!sid) return;
+        await loadSessionTags(sid);
+        const tags = sessionTagsCache[sid] || [];
+        const list = document.getElementById("tagPopoverList");
+        list.innerHTML = "";
+        if (tags.length === 0) {
+          list.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Nenhuma tag ainda</span>';
+        }
+        tags.forEach(tag => {
+          const color = tagColor(tag);
+          const chip = document.createElement("span");
+          chip.className = "tag-popover-chip";
+          chip.style.background = color + "18";
+          chip.style.color = color;
+          chip.innerHTML = `<span>${escapeHtml(tag)}</span><button data-tag="${escapeHtml(tag)}">✕</button>`;
+          chip.querySelector("button").addEventListener("click", () => {
+            removeTag(sid, tag).then(renderTagPopover);
+          });
+          list.appendChild(chip);
+        });
+
+        // Global tags
+        await loadAllUserTags();
+        const allList = document.getElementById("tagPopoverAllList");
+        allList.innerHTML = "";
+        if (allUserTags.length === 0) {
+          allList.innerHTML = '<span style="font-size:0.72rem;color:var(--text-secondary)">Nenhuma tag criada ainda</span>';
+        }
+        allUserTags.forEach(t => {
+          const tagName = typeof t === "string" ? t : t.tag;
+          const tagCount = typeof t === "object" ? t.count : 0;
+          
+          const chip = document.createElement("div");
+          chip.className = "tag-popover-global-chip";
+          const inSession = tags.includes(tagName);
+          if (inSession) chip.style.borderColor = tagColor(tagName);
+          
+          chip.innerHTML = `
+            <span class="tag-click-target" title="${inSession ? 'Remover desta conversa' : 'Adicionar a esta conversa'}">
+              <span style="color:${tagColor(tagName)}">${escapeHtml(tagName)}</span>
+              <span class="tag-count" style="font-size:0.6rem;color:var(--text-secondary);font-weight:700;">(${tagCount})</span>
+            </span>
+            <button class="tag-action-btn tag-edit-btn" title="Editar tag globalmente">
+              <i data-lucide="pencil" style="width:10px;height:10px"></i>
+            </button>
+            <button class="tag-action-btn tag-delete-btn" title="Excluir tag globalmente">
+              <i data-lucide="trash-2" style="width:10px;height:10px"></i>
+            </button>
+          `;
+          
+          chip.querySelector(".tag-click-target").addEventListener("click", () => {
+            if (inSession) {
+              removeTag(sid, tagName).then(renderTagPopover);
+            } else {
+              addTag(sid, tagName).then(renderTagPopover);
+            }
+          });
+          
+          chip.querySelector(".tag-edit-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            showTagRenameModal(tagName);
+          });
+          
+          chip.querySelector(".tag-delete-btn").addEventListener("click", (e) => {
+            e.stopPropagation();
+            showTagDeleteModal(tagName);
+          });
+          
+          allList.appendChild(chip);
+        });
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      }
+
+
+      // Tag popover event wiring
+      document.getElementById("tagPopoverBackdrop").addEventListener("click", closeTagPopover);
+      document.getElementById("tagPopoverAddBtn").addEventListener("click", () => {
+        const input = document.getElementById("tagPopoverInput");
+        const val = input.value.trim();
+        if (val && tagPopoverSessionId) {
+          addTag(tagPopoverSessionId, val).then(() => {
+            input.value = "";
+            renderTagPopover();
+          });
+        }
+      });
+      document.getElementById("tagPopoverInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          document.getElementById("tagPopoverAddBtn").click();
+        }
+      });
+
+      // Delete Tag Modal
+      let tagToDeleteName = null;
+      function showTagDeleteModal(tagName) {
+        tagToDeleteName = tagName;
+        document.getElementById("tagDeleteTarget").textContent = tagName;
+        document.getElementById("tagDeleteModal").classList.add("active");
+      }
+      function hideTagDeleteModal() {
+        document.getElementById("tagDeleteModal").classList.remove("active");
+        tagToDeleteName = null;
+      }
+
+      // Rename Tag Modal
+      let tagToRenameName = null;
+      function showTagRenameModal(tagName) {
+        tagToRenameName = tagName;
+        const input = document.getElementById("tagRenameInput");
+        input.value = tagName;
+        document.getElementById("tagRenameModal").classList.add("active");
+        setTimeout(() => input.select(), 50);
+      }
+      function hideTagRenameModal() {
+        document.getElementById("tagRenameModal").classList.remove("active");
+        tagToRenameName = null;
+      }
+
+      // Delete Tag Modal confirmation
+      document.getElementById("tagDeleteCancelBtn").addEventListener("click", hideTagDeleteModal);
+      document.getElementById("tagDeleteConfirmBtn").addEventListener("click", async () => {
+        if (tagToDeleteName) {
+          const btn = document.getElementById("tagDeleteConfirmBtn");
+          const oldText = btn.textContent;
+          btn.textContent = "Excluindo...";
+          btn.disabled = true;
+          try {
+            await deleteTagGlobal(tagToDeleteName);
+          } finally {
+            btn.textContent = oldText;
+            btn.disabled = false;
+            hideTagDeleteModal();
+          }
+        }
+      });
+
+      // Rename Tag Modal confirmation
+      document.getElementById("tagRenameCancelBtn").addEventListener("click", hideTagRenameModal);
+      document.getElementById("tagRenameConfirmBtn").addEventListener("click", async () => {
+        if (tagToRenameName) {
+          const newName = document.getElementById("tagRenameInput").value.trim();
+          if (newName && newName !== tagToRenameName) {
+            const btn = document.getElementById("tagRenameConfirmBtn");
+            const oldText = btn.textContent;
+            btn.textContent = "Salvando...";
+            btn.disabled = true;
+            try {
+              await renameTagGlobal(tagToRenameName, newName);
+            } finally {
+              btn.textContent = oldText;
+              btn.disabled = false;
+              hideTagRenameModal();
+            }
+          } else {
+            hideTagRenameModal();
+          }
+        }
+      });
+      document.getElementById("tagRenameInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          document.getElementById("tagRenameConfirmBtn").click();
+        }
+      });
+
+
+      // ============================================
+      // QUICK INPUT MODAL (PRD-1) — com autocomplete
+      // ============================================
+      let qiSelectedFocos = new Set(["performance"]);
+
+      // — Autocomplete engine —
+      function qiBuildOptions(acEl) {
+        const field = acEl.dataset.field;
+        const multi = acEl.dataset.multi === "true";
+        const selected = qiACGetSelected(acEl);
+        let items = [];
+        if (field === "loja") {
+          const lojas = [...new Set(dashboardData.map(r => r.loja).filter(Boolean))];
+          items = lojas.map(l => ({ value: l, label: l, sub: "" }));
+        } else if (field === "campanha") {
+          items = dashboardData.map(r => ({
+            value: r.titulo || r.anuncio_indice || "",
+            label: r.titulo || r.anuncio_indice || "—",
+            sub: [r.loja, r.produto].filter(Boolean).join(" · "),
+            _loja: r.loja,
+          }));
+        } else if (field === "produto") {
+          const map = new Map();
+          dashboardData.forEach(r => {
+            const key = r.produto || "";
+            if (!key) return;
+            if (!map.has(key)) map.set(key, { count: 0, lojas: new Set(), sumReceita: 0 });
+            const e = map.get(key);
+            e.count++;
+            if (r.loja) e.lojas.add(r.loja);
+            e.sumReceita += Number(r.receita) || 0;
+          });
+          items = [...map.entries()].map(([k, v]) => ({
+            value: k, label: k,
+            sub: `${v.count} anúncio(s) · ${v.lojas.size} loja(s)`,
+          }));
+        }
+        return items;
+      }
+
+      function qiACGetSelected(acEl) {
+        return [...acEl.querySelectorAll(".qi-ac-pill")].map(p => p.dataset.value);
+      }
+
+      function qiACSetSelected(acEl, values) {
+        acEl.querySelectorAll(".qi-ac-pill").forEach(p => p.remove());
+        const input = acEl.querySelector(".qi-ac-input");
+        values.forEach(v => {
+          const pill = document.createElement("span");
+          pill.className = "qi-ac-pill";
+          pill.dataset.value = v;
+          pill.innerHTML = `<span>${escapeHtml(v)}</span><button title="Remover">✕</button>`;
+          pill.querySelector("button").addEventListener("click", (e) => {
+            e.stopPropagation();
+            pill.remove();
+            qiACUpdateClear(acEl);
+          });
+          acEl.querySelector(".qi-ac-selected").insertBefore(pill, input);
+        });
+        qiACUpdateClear(acEl);
+      }
+
+      function qiACUpdateClear(acEl) {
+        const hasSelections = acEl.querySelectorAll(".qi-ac-pill").length > 0;
+        const hasInput = acEl.querySelector(".qi-ac-input").textContent.trim().length > 0;
+        const btn = acEl.querySelector(".qi-ac-clear");
+        btn.classList.toggle("visible", hasSelections || hasInput);
+      }
+
+      function qiACOpenDropdown(acEl, filter) {
+        const dd = acEl.querySelector(".qi-ac-dropdown");
+        
+        if (dashboardDataLoading && dashboardData.length === 0) {
+          dd.innerHTML = `
+            <div class="qi-ac-loading" style="padding: 12px; text-align: center; color: var(--text-secondary); font-size: 0.8rem; display: flex; align-items: center; justify-content: center; gap: 8px;">
+              <span class="ac-spinner" style="width: 14px; height: 14px; border: 2px solid var(--border-color); border-top-color: var(--color-primary); border-radius: 50%; display: inline-block; animation: ac-spin 0.6s linear infinite;"></span>
+              Carregando opções...
+            </div>
+          `;
+          dd.classList.add("open");
+          return;
+        }
+
+        const items = qiBuildOptions(acEl);
+        const selected = qiACGetSelected(acEl);
+        const multi = acEl.dataset.multi === "true";
+        const q = (filter || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+        let filtered = items;
+        if (q) {
+          filtered = items.filter(it => {
+            const norm = (it.label + " " + it.sub + " " + it.value).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+            return q.split(/\s+/).every(t => norm.includes(t));
+          });
+        }
+        dd.innerHTML = "";
+
+        // "Todas" option for single-select
+        if (!multi && acEl.dataset.field === "loja") {
+          const allBtn = document.createElement("button");
+          allBtn.className = "qi-ac-all-btn";
+          allBtn.textContent = "📋 Todas as lojas";
+          allBtn.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            qiACSetSelected(acEl, []);
+            dd.classList.remove("open");
+            acEl.querySelector(".qi-ac-input").textContent = "";
+            qiACUpdateClear(acEl);
+          });
+          dd.appendChild(allBtn);
+        }
+
+        if (filtered.length === 0) {
+          dd.innerHTML += '<div class="qi-ac-empty">Nenhum resultado</div>';
+        }
+        filtered.forEach(it => {
+          const opt = document.createElement("div");
+          opt.className = "qi-ac-option" + (selected.includes(it.value) ? " selected" : "");
+          opt.dataset.value = it.value;
+          opt.innerHTML = `<span>${escapeHtml(it.label)}</span>${it.sub ? `<span class="opt-sub">${escapeHtml(it.sub)}</span>` : ""}`;
+          opt.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            if (multi) {
+              if (selected.includes(it.value)) {
+                qiACSetSelected(acEl, selected.filter(v => v !== it.value));
+              } else {
+                qiACSetSelected(acEl, [...selected, it.value]);
+              }
+            } else {
+              qiACSetSelected(acEl, [it.value]);
+              dd.classList.remove("open");
+            }
+            // Re-open to update selection state
+            setTimeout(() => qiACOpenDropdown(acEl, acEl.querySelector(".qi-ac-input").textContent), 0);
+          });
+          dd.appendChild(opt);
+        });
+        dd.classList.add("open");
+      }
+
+      function qiACCloseAll() {
+        document.querySelectorAll(".qi-ac-dropdown").forEach(dd => dd.classList.remove("open"));
+      }
+
+      // Setup autocomplete behavior for each .qi-ac element
+      function setupQiAutocompletes() {
+        document.querySelectorAll(".qi-ac").forEach(acEl => {
+          const input = acEl.querySelector(".qi-ac-input");
+          const clearBtn = acEl.querySelector(".qi-ac-clear");
+
+          input.addEventListener("focus", () => {
+            qiACOpenDropdown(acEl, input.textContent);
+          });
+          input.addEventListener("input", () => {
+            qiACUpdateClear(acEl);
+            qiACOpenDropdown(acEl, input.textContent);
+          });
+          input.addEventListener("keydown", (e) => {
+            if (e.key === "Escape") {
+              qiACCloseAll();
+              input.blur();
+            } else if (e.key === "Enter") {
+              e.preventDefault();
+              // Select first highlighted or just close
+              const first = acEl.querySelector(".qi-ac-option:not(.selected)");
+              if (first) first.dispatchEvent(new Event("mousedown"));
+            } else if (e.key === "Backspace" && input.textContent === "") {
+              // Remove last pill
+              const pills = acEl.querySelectorAll(".qi-ac-pill");
+              if (pills.length > 0) {
+                pills[pills.length - 1].remove();
+                qiACUpdateClear(acEl);
+              }
+            }
+          });
+          input.addEventListener("blur", () => {
+            // Delay to allow mousedown on dropdown to fire first
+            setTimeout(() => qiACCloseAll(), 150);
+          });
+
+          clearBtn.addEventListener("click", () => {
+            acEl.querySelectorAll(".qi-ac-pill").forEach(p => p.remove());
+            input.textContent = "";
+            qiACUpdateClear(acEl);
+            qiACOpenDropdown(acEl, "");
+            input.focus();
+          });
+
+          // Click on selected area focuses input
+          acEl.querySelector(".qi-ac-selected").addEventListener("click", () => input.focus());
+        });
+      }
+
+      // — Background loading for autocomplete options —
+      function updateACDropdownsLoadingState() {
+        const openDd = document.querySelector(".qi-ac-dropdown.open");
+        if (openDd) {
+          const acEl = openDd.closest(".qi-ac");
+          if (acEl) {
+            const input = acEl.querySelector(".qi-ac-input");
+            qiACOpenDropdown(acEl, input.textContent);
+          }
+        }
+      }
+
+      function updateACDropdownsLoadedState() {
+        const openDd = document.querySelector(".qi-ac-dropdown.open");
+        if (openDd) {
+          const acEl = openDd.closest(".qi-ac");
+          if (acEl) {
+            const input = acEl.querySelector(".qi-ac-input");
+            qiACOpenDropdown(acEl, input.textContent);
+          }
+        }
+      }
+
+      async function fetchDashboardDataInBackground() {
+        if (dashboardDataLoading) return;
+        dashboardDataLoading = true;
+        updateACDropdownsLoadingState();
+        try {
+          const resp = await fetch(OVERVIEW_URL, { cache: "no-store" });
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          const raw = (await resp.text()).trim();
+          let data = {};
+          if (raw) {
+            try { data = JSON.parse(raw); } catch (_) {}
+          }
+          dashboardData = Array.isArray(data.anuncios) ? data.anuncios : [];
+          dashboardDataLoaded = true;
+        } catch (e) {
+          console.warn("Error loading dashboard data in background:", e);
+        } finally {
+          dashboardDataLoading = false;
+          updateACDropdownsLoadedState();
+        }
+      }
+
+      // — Modal logic —
+      function openQuickInputModal(defaults) {
+        const backdrop = document.getElementById("qiModalBackdrop");
+        backdrop.classList.add("active");
+
+        if (!dashboardDataLoaded && !dashboardDataLoading) {
+          fetchDashboardDataInBackground();
+        }
+
+
+        // Reset
+        qiSelectedFocos = new Set(["performance"]);
+        document.getElementById("qiObsInput").value = defaults?.obs || "";
+        document.querySelectorAll(".qi-chip").forEach(c => {
+          c.classList.toggle("selected", c.dataset.foco === "performance");
+        });
+
+        // Reset all autocomplete selections
+        document.querySelectorAll(".qi-ac").forEach(acEl => {
+          qiACSetSelected(acEl, []);
+          acEl.querySelector(".qi-ac-input").textContent = "";
+          qiACUpdateClear(acEl);
+        });
+
+        // Pre-fill defaults if provided
+        if (defaults?.loja) qiACSetSelected(document.getElementById("qiLojaAC"), [defaults.loja]);
+        if (defaults?.campanha) qiACSetSelected(document.getElementById("qiCampanhaAC"), [defaults.campanha]);
+        if (defaults?.produto) qiACSetSelected(document.getElementById("qiProdutoAC"), [defaults.produto]);
+
+        setTimeout(() => {
+          document.querySelector("#qiLojaAC .qi-ac-input").focus();
+        }, 100);
+      }
+
+      function closeQuickInputModal() {
+        document.getElementById("qiModalBackdrop").classList.remove("active");
+        qiACCloseAll();
+      }
+
+      function buildQuickInputPrompt() {
+        const lojaVals = qiACGetSelected(document.getElementById("qiLojaAC"));
+        const campanhaVals = qiACGetSelected(document.getElementById("qiCampanhaAC"));
+        const produtoVals = qiACGetSelected(document.getElementById("qiProdutoAC"));
+        const obs = document.getElementById("qiObsInput").value.trim();
+        const focos = [...qiSelectedFocos];
+
+        const focoLabels = {
+          performance: "Performance Geral",
+          lucro: "Lucro / Margem",
+          acos: "ACOS / CTR",
+          escala: "Oportunidade de Escala",
+          problemas: "Problemas / Ralo",
+          comparar: "Comparar Lojas"
+        };
+
+        const parts = [];
+        if (lojaVals.length > 0) parts.push(`[LOJA: ${lojaVals.join(", ")}]`);
+        else parts.push("[LOJA: Todas]");
+        if (campanhaVals.length > 0) parts.push(`[CAMPANHA: ${campanhaVals.join(", ")}]`);
+        if (produtoVals.length > 0) parts.push(`[PRODUTO: ${produtoVals.join(", ")}]`);
+        if (focos.length > 0) parts.push(`[FOCO: ${focos.map(f => focoLabels[f] || f).join(", ")}]`);
+        if (obs) parts.push(`[OBS: ${obs}]`);
+
+        return parts.join(" ");
+      }
+
+      // Chip toggle
+      document.getElementById("qiFocoChips").addEventListener("click", (e) => {
+        const chip = e.target.closest(".qi-chip");
+        if (!chip) return;
+        const foco = chip.dataset.foco;
+        if (qiSelectedFocos.has(foco)) {
+          if (qiSelectedFocos.size > 1) {
+            qiSelectedFocos.delete(foco);
+            chip.classList.remove("selected");
+          }
+        } else {
+          qiSelectedFocos.add(foco);
+          chip.classList.add("selected");
+        }
+      });
+
+      // Quick input event wiring
+      document.getElementById("qiCloseBtn").addEventListener("click", closeQuickInputModal);
+      document.getElementById("qiCancelBtn").addEventListener("click", closeQuickInputModal);
+      document.getElementById("qiModalBackdrop").addEventListener("click", (e) => {
+        if (e.target === e.currentTarget) closeQuickInputModal();
+      });
+      document.getElementById("qiConfirmBtn").addEventListener("click", () => {
+        const prompt = buildQuickInputPrompt();
+        closeQuickInputModal();
+        elements.messageInput.value = prompt;
+        elements.messageInput.dispatchEvent(new Event("input"));
+        setTimeout(() => handleSendMessage(new Event("submit")), 50);
+      });
+
+      // Analyze button opens modal
+      document.getElementById("analyzeBtn").addEventListener("click", () => {
+        openQuickInputModal();
+      });
 
       // Global Initialization
       document.addEventListener("DOMContentLoaded", () => {

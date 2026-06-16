@@ -76,7 +76,7 @@ CREATE TRIGGER trg_rec_touch
 --                "produto":"Base A4", "texto":"Reduzir lance em 15%",
 --                "prioridade":1, "metrica_alvo":"acos" }, ...]
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_add_recommendations(
+CREATE OR REPLACE FUNCTION embaplan_add_recommendations(
   p_batch_id BIGINT,
   p_user_id  UUID,
   p_rows     JSONB
@@ -122,9 +122,8 @@ $$;
 
 -- =============================================
 -- 5) RPC: atualizar status de uma recomendação (usuário no front)
---    Usado pelo webhook embaplan-recommendation-status (PATCH).
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_set_recommendation_status(
+CREATE OR REPLACE FUNCTION embaplan_set_recommendation_status(
   p_id      BIGINT,
   p_status  TEXT,
   p_nota    TEXT DEFAULT NULL
@@ -150,7 +149,7 @@ $$;
 -- 6) RPC: registrar uma alteração própria do usuário ("Outros")
 --    Já entra como origem='usuario' e status='feito'.
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_add_user_change(
+CREATE OR REPLACE FUNCTION embaplan_add_user_change(
   p_user_id        UUID,
   p_anuncio_indice TEXT,
   p_texto          TEXT,
@@ -190,13 +189,8 @@ $$;
 
 -- =============================================
 -- 7) RPC: avaliar eficácia das recomendações de um batch
---    Compara a métrica_alvo da recomendação (no batch de origem)
---    com o valor no batch_alvo (geralmente o batch novo).
---    Marca resultado: funcionou | neutro | piorou.
---    Chamado pelo fluxo de upload logo após gravar os snapshots
---    do novo batch (passando o batch ANTERIOR como p_batch_origem).
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_evaluate_recommendations(
+CREATE OR REPLACE FUNCTION embaplan_evaluate_recommendations(
   p_batch_origem BIGINT,
   p_batch_alvo   BIGINT
 )
@@ -273,7 +267,7 @@ $$;
 -- =============================================
 -- 8) RPC: listar recomendações de um anúncio (timeline de ações)
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_recommendations_for_ad(
+CREATE OR REPLACE FUNCTION embaplan_recommendations_for_ad(
   p_anuncio_indice TEXT
 )
 RETURNS TABLE(
@@ -305,20 +299,20 @@ $$;
 -- ---------------------------------------------
 -- 9) Permissões
 -- ---------------------------------------------
-GRANT EXECUTE ON FUNCTION sameka_embaplan_add_recommendations(BIGINT, UUID, JSONB) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_set_recommendation_status(BIGINT, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_add_user_change(UUID, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_evaluate_recommendations(BIGINT, BIGINT) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_recommendations_for_ad(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_add_recommendations(BIGINT, UUID, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_set_recommendation_status(BIGINT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_add_user_change(UUID, TEXT, TEXT, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_evaluate_recommendations(BIGINT, BIGINT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_recommendations_for_ad(TEXT) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- DROP FUNCTION IF EXISTS sameka_embaplan_recommendations_for_ad(TEXT);
--- DROP FUNCTION IF EXISTS sameka_embaplan_evaluate_recommendations(BIGINT, BIGINT);
--- DROP FUNCTION IF EXISTS sameka_embaplan_add_user_change(UUID, TEXT, TEXT, TEXT, TEXT, TEXT);
--- DROP FUNCTION IF EXISTS sameka_embaplan_set_recommendation_status(BIGINT, TEXT, TEXT);
--- DROP FUNCTION IF EXISTS sameka_embaplan_add_recommendations(BIGINT, UUID, JSONB);
+-- DROP FUNCTION IF EXISTS embaplan_recommendations_for_ad(TEXT);
+-- DROP FUNCTION IF EXISTS embaplan_evaluate_recommendations(BIGINT, BIGINT);
+-- DROP FUNCTION IF EXISTS embaplan_add_user_change(UUID, TEXT, TEXT, TEXT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS embaplan_set_recommendation_status(BIGINT, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS embaplan_add_recommendations(BIGINT, UUID, JSONB);
 -- DROP TRIGGER IF EXISTS trg_rec_touch ON embaplan_recommendation;
 -- DROP FUNCTION IF EXISTS trg_embaplan_rec_touch();
 -- DROP TABLE IF EXISTS embaplan_recommendation;

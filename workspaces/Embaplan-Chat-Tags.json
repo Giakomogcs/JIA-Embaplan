@@ -1,0 +1,588 @@
+{
+  "name": "Embaplan-Chat-Tags",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-add-tag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "add-tag-webhook-id",
+      "name": "Webhook - Add Tag",
+      "position": [
+        -200,
+        -200
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "add-tag-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const session_id = $input.first().json.body?.session_id;\nconst tag = $input.first().json.body?.tag;\nif (!session_id || !tag) {\n  throw new Error('session_id and tag are required');\n}\nreturn { session_id, tag };"
+      },
+      "id": "add-tag-extract-id",
+      "name": "Extract Add Tag Args",
+      "position": [
+        0,
+        -200
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_chat_add_tag('{{ $json.session_id }}', '{{ $json.tag }}');",
+        "options": {}
+      },
+      "id": "add-tag-db-id",
+      "name": "Add Tag in DB",
+      "position": [
+        200,
+        -200
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true\n}",
+        "options": {}
+      },
+      "id": "add-tag-respond-id",
+      "name": "Respond Add Tag",
+      "position": [
+        400,
+        -200
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-remove-tag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "remove-tag-webhook-id",
+      "name": "Webhook - Remove Tag",
+      "position": [
+        -200,
+        0
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "remove-tag-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const session_id = $input.first().json.body?.session_id;\nconst tag = $input.first().json.body?.tag;\nif (!session_id || !tag) {\n  throw new Error('session_id and tag are required');\n}\nreturn { session_id, tag };"
+      },
+      "id": "remove-tag-extract-id",
+      "name": "Extract Remove Tag Args",
+      "position": [
+        0,
+        0
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_chat_remove_tag('{{ $json.session_id }}', '{{ $json.tag }}');",
+        "options": {}
+      },
+      "id": "remove-tag-db-id",
+      "name": "Remove Tag in DB",
+      "position": [
+        200,
+        0
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true\n}",
+        "options": {}
+      },
+      "id": "remove-tag-respond-id",
+      "name": "Respond Remove Tag",
+      "position": [
+        400,
+        0
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "embaplan-list-tags",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "list-tags-webhook-id",
+      "name": "Webhook - List Tags",
+      "position": [
+        -200,
+        200
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "list-tags-webhook-uid"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tag, count FROM embaplan_chat_list_user_tags();",
+        "options": {}
+      },
+      "id": "list-tags-db-id",
+      "name": "List Tags from DB",
+      "position": [
+        0,
+        200
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "list-tags-respond-id",
+      "name": "Respond List Tags",
+      "position": [
+        200,
+        200
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "embaplan-session-tags",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "session-tags-webhook-id",
+      "name": "Webhook - Session Tags",
+      "position": [
+        -200,
+        400
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "session-tags-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const session_id = $input.first().json.query?.session_id || $input.first().json.queryString?.session_id;\nif (!session_id) {\n  throw new Error('session_id query parameter is required');\n}\nreturn { session_id };"
+      },
+      "id": "session-tags-extract-id",
+      "name": "Extract Session Tags Args",
+      "position": [
+        0,
+        400
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT tag FROM embaplan_chat_session_tags('{{ $json.session_id }}');",
+        "options": {}
+      },
+      "id": "session-tags-db-id",
+      "name": "Session Tags from DB",
+      "position": [
+        200,
+        400
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "id": "session-tags-respond-id",
+      "name": "Respond Session Tags",
+      "position": [
+        400,
+        400
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-rename-tag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "rename-tag-webhook-id",
+      "name": "Webhook - Rename Tag",
+      "position": [
+        -200,
+        600
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "rename-tag-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const old_tag = $input.first().json.body?.old_tag;\nconst new_tag = $input.first().json.body?.new_tag;\nif (!old_tag || !new_tag) {\n  throw new Error('old_tag and new_tag are required');\n}\nreturn { old_tag, new_tag };"
+      },
+      "id": "rename-tag-extract-id",
+      "name": "Extract Rename Tag Args",
+      "position": [
+        0,
+        600
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_chat_rename_tag('{{ $json.old_tag }}', '{{ $json.new_tag }}');",
+        "options": {}
+      },
+      "id": "rename-tag-db-id",
+      "name": "Rename Tag in DB",
+      "position": [
+        200,
+        600
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true\n}",
+        "options": {}
+      },
+      "id": "rename-tag-respond-id",
+      "name": "Respond Rename Tag",
+      "position": [
+        400,
+        600
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-delete-tag",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "delete-tag-webhook-id",
+      "name": "Webhook - Delete Tag",
+      "position": [
+        -200,
+        750
+      ],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "webhookId": "delete-tag-webhook-uid"
+    },
+    {
+      "parameters": {
+        "jsCode": "const tag = $input.first().json.body?.tag;\nif (!tag) {\n  throw new Error('tag is required');\n}\nreturn { tag };"
+      },
+      "id": "delete-tag-extract-id",
+      "name": "Extract Delete Tag Args",
+      "position": [
+        0,
+        750
+      ],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_chat_delete_tag('{{ $json.tag }}');",
+        "options": {}
+      },
+      "id": "delete-tag-db-id",
+      "name": "Delete Tag in DB",
+      "position": [
+        200,
+        750
+      ],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true\n}",
+        "options": {}
+      },
+      "id": "delete-tag-respond-id",
+      "name": "Respond Delete Tag",
+      "position": [
+        400,
+        750
+      ],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - Add Tag": {
+      "main": [
+        [
+          {
+            "node": "Extract Add Tag Args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Add Tag Args": {
+      "main": [
+        [
+          {
+            "node": "Add Tag in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Add Tag in DB": {
+      "main": [
+        [
+          {
+            "node": "Respond Add Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Remove Tag": {
+      "main": [
+        [
+          {
+            "node": "Extract Remove Tag Args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Remove Tag Args": {
+      "main": [
+        [
+          {
+            "node": "Remove Tag in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Tag in DB": {
+      "main": [
+        [
+          {
+            "node": "Respond Remove Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - List Tags": {
+      "main": [
+        [
+          {
+            "node": "List Tags from DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Tags from DB": {
+      "main": [
+        [
+          {
+            "node": "Respond List Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Session Tags": {
+      "main": [
+        [
+          {
+            "node": "Extract Session Tags Args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Session Tags Args": {
+      "main": [
+        [
+          {
+            "node": "Session Tags from DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Session Tags from DB": {
+      "main": [
+        [
+          {
+            "node": "Respond Session Tags",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Rename Tag": {
+      "main": [
+        [
+          {
+            "node": "Extract Rename Tag Args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Rename Tag Args": {
+      "main": [
+        [
+          {
+            "node": "Rename Tag in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Rename Tag in DB": {
+      "main": [
+        [
+          {
+            "node": "Respond Rename Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook - Delete Tag": {
+      "main": [
+        [
+          {
+            "node": "Extract Delete Tag Args",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Delete Tag Args": {
+      "main": [
+        [
+          {
+            "node": "Delete Tag in DB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Tag in DB": {
+      "main": [
+        [
+          {
+            "node": "Respond Delete Tag",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "add-tag-workflow-version-id",
+  "meta": {
+    "instanceId": "03d32a206f2d8840fce482e6c587726f18775bd9177e9401c00ca76d3086ad41"
+  },
+  "id": "tags-workflow-id",
+  "tags": []
+}

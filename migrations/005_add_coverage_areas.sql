@@ -1,5 +1,5 @@
 -- =============================================
--- Sameka — 005: Add coverage areas (estados/cidades)
+-- Embaplan — 005: Add coverage areas (estados/cidades)
 -- Stores estados and cidades as JSONB arrays in
 -- raw_user_meta_data. Admin = all.
 -- Run AFTER 004_add_company_name.sql
@@ -8,8 +8,8 @@
 -- =======  UP  ========
 
 -- 1) list_users: now returns estados and cidades
-DROP FUNCTION IF EXISTS sameka_admin_list_users();
-CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 RETURNS TABLE(
   user_id      UUID,
   email        TEXT,
@@ -26,7 +26,7 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
   RETURN QUERY
@@ -40,14 +40,14 @@ BEGIN
       COALESCE(u.raw_user_meta_data->'cidades', '[]'::jsonb) AS cidades,
       u.created_at
     FROM auth.users u
-    WHERE u.raw_user_meta_data->>'company_name' = 'sameka'
+    WHERE u.raw_user_meta_data->>'company_name' = 'embaplan'
     ORDER BY u.created_at DESC;
 END;
 $$;
 
 -- 2) update_user: now accepts estados/cidades JSONB arrays
-DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT);
-CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT);
+CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
   p_user_id   UUID,
   p_full_name TEXT,
   p_role      TEXT    DEFAULT NULL,
@@ -62,10 +62,10 @@ AS $$
 DECLARE
   new_meta JSONB;
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
-  new_meta := jsonb_build_object('full_name', p_full_name, 'company_name', 'sameka');
+  new_meta := jsonb_build_object('full_name', p_full_name, 'company_name', 'embaplan');
   IF p_role IS NOT NULL THEN
     new_meta := new_meta || jsonb_build_object('role', p_role);
   END IF;
@@ -82,16 +82,16 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT, JSONB, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT, JSONB, JSONB) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
 -- Reverts to 004 signatures (no estados/cidades)
 --
--- DROP FUNCTION IF EXISTS sameka_admin_list_users();
--- CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+-- DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+-- CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 -- RETURNS TABLE(
 --   user_id      UUID,
 --   email        TEXT,
@@ -106,7 +106,7 @@ NOTIFY pgrst, 'reload schema';
 -- STABLE
 -- AS $$
 -- BEGIN
---   IF NOT sameka_is_admin() THEN
+--   IF NOT embaplan_is_admin() THEN
 --     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
 --   END IF;
 --   RETURN QUERY
@@ -118,13 +118,13 @@ NOTIFY pgrst, 'reload schema';
 --       COALESCE(u.raw_user_meta_data->>'company_name', '')::TEXT AS company_name,
 --       u.created_at
 --     FROM auth.users u
---     WHERE u.raw_user_meta_data->>'company_name' = 'sameka'
+--     WHERE u.raw_user_meta_data->>'company_name' = 'embaplan'
 --     ORDER BY u.created_at DESC;
 -- END;
 -- $$;
 --
--- DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT, JSONB, JSONB);
--- CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+-- DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT, JSONB, JSONB);
+-- CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
 --   p_user_id      UUID,
 --   p_full_name    TEXT,
 --   p_role         TEXT DEFAULT NULL
@@ -137,10 +137,10 @@ NOTIFY pgrst, 'reload schema';
 -- DECLARE
 --   new_meta JSONB;
 -- BEGIN
---   IF NOT sameka_is_admin() THEN
+--   IF NOT embaplan_is_admin() THEN
 --     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
 --   END IF;
---   new_meta := jsonb_build_object('full_name', p_full_name, 'company_name', 'sameka');
+--   new_meta := jsonb_build_object('full_name', p_full_name, 'company_name', 'embaplan');
 --   IF p_role IS NOT NULL THEN
 --     new_meta := new_meta || jsonb_build_object('role', p_role);
 --   END IF;
@@ -151,7 +151,7 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
 --
 -- NOTIFY pgrst, 'reload schema';

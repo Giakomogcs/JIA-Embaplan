@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {
-        "content": "## 🤖 Recomendações geradas por IA\n\nWorkflow DEDICADO que gera recomendações de otimização para um anúncio usando IA — **sem depender do chat**. As sugestões são gravadas direto no banco (origem='agente') e aparecem na aba *Recomendações* do front.\n\n**Endpoint:** `POST /webhook/embaplan-generate-recommendations`\n**Body:** `{ \"anuncio_indice\": \"L2#47\", \"user_id\": \"<uuid?>\", \"foco\": \"opcional: ex. reduzir ACOS\" }`\n\n### Fluxo\n1. *Contexto (RPC)* lê o estado atual + linha do tempo + recomendações existentes via `sameka_embaplan_ad_context_for_ai`.\n2. *Montar Prompt* monta o briefing para a IA (fonte única de verdade — sem inventar números).\n3. *Gerar Recomendações (IA)* devolve um array JSON estrito.\n4. *Validar JSON* sanitiza/normaliza.\n5. *Salvar Recs (RPC)* grava via `sameka_embaplan_add_agent_recommendations` (com dedup).\n\n### ⚙️ Antes de ativar\n1. Rode a migration `014_ai_recommendations.sql` (além de 008–010).\n2. Nós `*(RPC)`: credencial **Postgres** `Supabase_database`.\n3. Nó *Azure OpenAI Chat Model*: MESMA estrutura/credencial do agente (`Azure Open AI account 3`, modelo `gpt-5.4-mini`). Para usar Gemini, basta conectar o *Google Gemini Chat Model* na entrada de modelo.",
+        "content": "## 🤖 Recomendações geradas por IA\n\nWorkflow DEDICADO que gera recomendações de otimização para um anúncio usando IA — **sem depender do chat**. As sugestões são gravadas direto no banco (origem='agente') e aparecem na aba *Recomendações* do front.\n\n**Endpoint:** `POST /webhook/embaplan-generate-recommendations`\n**Body:** `{ \"anuncio_indice\": \"L2#47\", \"user_id\": \"<uuid?>\", \"foco\": \"opcional: ex. reduzir ACOS\" }`\n\n### Fluxo\n1. *Contexto (RPC)* lê o estado atual + linha do tempo + recomendações existentes via `embaplan_ad_context_for_ai`.\n2. *Montar Prompt* monta o briefing para a IA (fonte única de verdade — sem inventar números).\n3. *Gerar Recomendações (IA)* devolve um array JSON estrito.\n4. *Validar JSON* sanitiza/normaliza.\n5. *Salvar Recs (RPC)* grava via `embaplan_add_agent_recommendations` (com dedup).\n\n### ⚙️ Antes de ativar\n1. Rode a migration `014_ai_recommendations.sql` (além de 008–010).\n2. Nós `*(RPC)`: credencial **Postgres** `Supabase_database`.\n3. Nó *Azure OpenAI Chat Model*: MESMA estrutura/credencial do agente (`Azure Open AI account 3`, modelo `gpt-5.4-mini`). Para usar Gemini, basta conectar o *Google Gemini Chat Model* na entrada de modelo,",
         "height": 360,
         "width": 520,
         "color": 4
@@ -41,7 +41,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_ad_context_for_ai($1::text) AS ctx;",
+        "query": "SELECT embaplan_ad_context_for_ai($1::text) AS ctx;",
         "options": {
           "queryReplacement": "={{ [$json.p_anuncio_indice] }}"
         }
@@ -112,7 +112,7 @@
     {
       "parameters": {
         "operation": "executeQuery",
-        "query": "SELECT sameka_embaplan_add_agent_recommendations($1::uuid, $2::jsonb) AS registradas;",
+        "query": "SELECT embaplan_add_agent_recommendations($1::uuid, $2::jsonb) AS registradas;",
         "options": {
           "queryReplacement": "={{ [$json.p_user_id || null, JSON.stringify($json.p_rows)] }}"
         }

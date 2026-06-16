@@ -1,12 +1,12 @@
 -- =============================================
--- Universo Tintas — 002: Add role to user CRUD
+-- Embaplan — 002: Add role to user CRUD
 -- Run AFTER 001_user_crud_functions.sql
 -- =============================================
 
 -- =======  UP  ========
 
-DROP FUNCTION IF EXISTS sameka_admin_list_users();
-CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 RETURNS TABLE(
   user_id    UUID,
   email      TEXT,
@@ -29,8 +29,8 @@ AS $$
   ORDER BY created_at DESC;
 $$;
 
-DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT);
-CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT);
+CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
   p_user_id   UUID,
   p_full_name TEXT,
   p_role      TEXT DEFAULT NULL
@@ -54,16 +54,16 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
 -- Reverts to 001 signatures (no role)
 --
--- DROP FUNCTION IF EXISTS sameka_admin_list_users();
--- CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+-- DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+-- CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 -- RETURNS TABLE(
 --   user_id    UUID,
 --   email      TEXT,
@@ -84,8 +84,8 @@ NOTIFY pgrst, 'reload schema';
 --   ORDER BY created_at DESC;
 -- $$;
 --
--- DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT);
--- CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+-- DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT);
+-- CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
 --   p_user_id   UUID,
 --   p_full_name TEXT
 -- )
@@ -103,7 +103,7 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT) TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT) TO authenticated;
 --
 -- NOTIFY pgrst, 'reload schema';

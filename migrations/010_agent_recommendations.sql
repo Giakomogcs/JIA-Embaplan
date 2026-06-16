@@ -12,7 +12,7 @@
 -- p_rows = [{ "anuncio_indice":"L2#47", "loja":"Loja 2", "produto":"Base A4",
 --             "texto":"Reduzir lance em 15%", "prioridade":1,
 --             "metrica_alvo":"acos" }, ...]
-CREATE OR REPLACE FUNCTION sameka_embaplan_add_agent_recommendations(
+CREATE OR REPLACE FUNCTION embaplan_add_agent_recommendations(
   p_user_id UUID,
   p_rows    JSONB
 )
@@ -75,10 +75,10 @@ BEGIN
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_embaplan_add_agent_recommendations(UUID, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_add_agent_recommendations(UUID, JSONB) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- DROP FUNCTION IF EXISTS sameka_embaplan_add_agent_recommendations(UUID, JSONB);
+-- DROP FUNCTION IF EXISTS embaplan_add_agent_recommendations(UUID, JSONB);
 -- NOTIFY pgrst, 'reload schema';

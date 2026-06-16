@@ -1,7 +1,7 @@
 # PRD & Plano — Evolução do Agente Embaplan
 
-> **Versão:** 1.1 · **Data:** 09/06/2026 · **Produto:** Assistente Inteligente de Performance de Anúncios (Embaplan)
-> **Status:** Em implementação (Fase 1 — Épico 1 entregue parcialmente)
+> **Versão:** 1.2 · **Data:** 15/06/2026 · **Produto:** Assistente Inteligente de Performance de Anúncios (Embaplan)
+> **Status:** Em implementação (Fase A entregue — Tags + Inputs Rápidos)
 
 ---
 
@@ -31,7 +31,7 @@
 | Resposta em formato "Resumo Executivo" (Situação/Motivo/Ação/Impacto) | prompt do Agente IA (n8n) → REGRA 2.3 + template do card | ✅ Entregue |
 
 ### 0.0 Carga incremental mês a mês (Richard)
-O modelo de snapshots **já é append-only**: cada upload cria um *batch* e a timeline soma todos os batches — então **basta enviar o mês novo** (ex.: só "março"), sem reprocessar jan+fev. A migration `012` adiciona o campo `periodo` (mês de referência) e a RPC `sameka_embaplan_create_month_batch(... p_periodo, p_replace)`: reenviar o mesmo mês **substitui** aquele batch (idempotente) em vez de duplicar. **Passo manual no n8n:** trocar a chamada de `sameka_embaplan_create_batch` por `sameka_embaplan_create_month_batch` no fluxo de captura, passando o mês de referência da planilha.
+O modelo de snapshots **já é append-only**: cada upload cria um *batch* e a timeline soma todos os batches — então **basta enviar o mês novo** (ex.: só "março"), sem reprocessar jan+fev. A migration `012` adiciona o campo `periodo` (mês de referência) e a RPC `embaplan_create_month_batch(... p_periodo, p_replace)`: reenviar o mesmo mês **substitui** aquele batch (idempotente) em vez de duplicar. **Passo manual no n8n:** trocar a chamada de `embaplan_create_batch` por `embaplan_create_month_batch` no fluxo de captura, passando o mês de referência da planilha.
 
 ### 0.1 Wiring do gatilho — ✅ implementado
 O fluxo `Embaplan - Upload Planilha Anuncios` agora, após **"Atualizar Planilha Embaplan"**, executa o sub-fluxo `Consultar Planilha Inteligente` (aba "Dados Brutos"), extrai `produtos[]` em *Preparar Captura* e faz `POST` para `embaplan-capture-snapshot`. A resposta ao usuário sai em paralelo (não espera a captura). **Único passo manual:** no n8n, abrir o nó *Obter Sumário (Sub-fluxo)* e selecionar o workflow do sub-fluxo (placeholder `REPLACE_WITH_SUBFLUXO_WORKFLOW_ID`).
@@ -100,7 +100,7 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 | Conhecimento | `Embaplan - RAG` + base de documentos | Playbooks/boas práticas de ads consultados antes de recomendar. |
 | Ingestão | `Upload Planilha Anuncios` | Sobe `.xlsx` para o Google Drive. |
 | Sessões | `Chat-GET-Sessions / GET-History / DELETE-Session / prune` | CRUD de conversa. |
-| Persistência | Supabase (Postgres) | `sameka_users` (papéis, empresa, áreas de cobertura), `sameka_chat_message` (histórico com `user_id`). Migrations `001`–`007`. |
+| Persistência | Supabase (Postgres) | `embaplan_users` (papéis, empresa, áreas de cobertura), `embaplan_chat_message` (histórico com `user_id`). Migrations `001`–`007`. |
 
 **Métricas que o agente já calcula por anúncio e por linha de produto:** Vendas, Receita, Lucro, Investimento Ads, ACOS, CTR, Conversão, ROAS, ROI incremental sobre ads, Margem Líquida, Custo por Venda, Ticket Médio, Saúde 0–10.
 
@@ -172,7 +172,7 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 
 ---
 
-### 🟥 Épico 2 — Acompanhamento de Recomendações (Checklist Executável)
+## 2. Acompanhamento de Recomendações (Checklist Executável)
 **Pedido do usuário:** *"Marcar com um check ou cancel cada um dos tópicos que o agente recomendou e ir registrando esses históricos... e ter um input de 'outros' para escrever uma alteração que não foi o que o agente sugeriu, para ele saber disso."*
 
 **Problema:** recomendações são texto solto; ninguém sabe o que foi executado.
@@ -197,7 +197,7 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 
 ---
 
-### 🟧 Épico 3 — Dashboard Visual de Análises
+## 3. Dashboard Visual de Análises
 **Pedido do usuário:** *"Adicionar dashboard visual das análises — os primeiros/melhores anúncios, com ACOS altos também (os ruins). Insights, avisos."*
 
 **Problema:** toda a inteligência está presa em texto longo; falta leitura rápida.
@@ -224,7 +224,7 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 
 ---
 
-### 🟧 Épico 4 — Inteligência de Portfólio: Canibalização × Ticket Médio
+## 4. Inteligência de Portfólio: Canibalização × Ticket Médio
 **Pedido do usuário:** *"Entender que muitos anúncios do mesmo produto aumentam o ticket médio; o ML quer que todos vendam, mas não podemos ter anúncios que façam perder dinheiro. Entender que os anúncios podem se impulsionar e fazer leilões de ofertas na plataforma."*
 
 **Problema:** o agente trata canibalização como algo a evitar, sem considerar o efeito positivo de cobertura/ticket médio nem a dinâmica de leilão dos marketplaces.
@@ -247,7 +247,7 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 
 ---
 
-### 🟧 Épico 5 — Maximizar Venda do Portfólio de Bases (Comparação entre Lojas)
+## 5. Maximizar Venda do Portfólio de Bases (Comparação entre Lojas)
 **Pedido do usuário:** *"Como faço para aumentar a venda de todas as bases sem me importar com a competição entre anúncios e lojas? A comparação entre lojas tem que entender isso."*
 
 **Problema:** a regra atual **segrega rigidamente por loja** e proíbe consolidar — ótimo para evitar erro numérico, mas impede a visão "crescer o todo".
@@ -262,14 +262,14 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 
 **Mudanças técnicas**
 - **Prompt:** nova seção "MODO PORTFÓLIO / CROSS-LOJA" que coexiste com a segregação atual, com regras claras de quando comparar vs. quando segregar.
-- **Sub-fluxo/Dashboard:** visão "mesma base em N lojas".
+- **Sub-fluxo/Dashboard:** visão "mesma base in N lojas".
 
 **Critérios de aceite**
 - Ao pedir "como vender mais todas as bases", o agente responde com plano de portfólio (alocação por loja) sem violar a regra anti-soma indevida.
 
 ---
 
-### 🟨 Épico 6 — Recomendações de Investimento com Forecast
+## 6. Recomendações de Investimento com Forecast
 **Pedido do usuário:** *"Quando falar para aumentar o investimento na campanha, deve trazer o investimento estimado e o valor que retornará."*
 
 **Problema:** hoje o agente diz "teste mais verba" sem números.
@@ -291,7 +291,7 @@ Este documento organiza essas melhorias em **7 épicos**, com requisitos funcion
 
 ---
 
-### 🟨 Épico 7 — Objetividade e Tom Instrutivo
+## 7. Objetividade e Tom Instrutivo
 **Pedido do usuário:** *"Ser mais objetivo nas respostas e falar mais focado e instrutivo."*
 
 **Problema:** o template atual é extenso (cards completos para todos os anúncios, validações verbosas).

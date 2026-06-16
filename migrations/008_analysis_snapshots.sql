@@ -65,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_snapshot_batch
 --    Chamado pelo fluxo de upload (n8n) logo após
 --    atualizar a planilha no Drive.
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_create_batch(
+CREATE OR REPLACE FUNCTION embaplan_create_batch(
   p_user_id      UUID DEFAULT NULL,
   p_rotulo       TEXT DEFAULT NULL,
   p_arquivo_nome TEXT DEFAULT NULL
@@ -88,16 +88,8 @@ $$;
 
 -- =============================================
 -- 5) RPC: gravar snapshots em lote (bulk insert)
---    p_rows = array JSON, um objeto por anúncio, ex.:
---    [{ "loja":"Loja 2", "produto":"Base A4", "anuncio_indice":"L2#47",
---       "titulo":"...", "status":"🚀 Escalável", "saude":9.2,
---       "vendas":575, "receita":18534.15, "lucro":7400.10,
---       "investimento_ads":1268.6, "acos":6.85, "ctr":1.67,
---       "conversao":6.3, "roas":14.6, "roi":1361.0,
---       "margem_liquida":39.9, "ticket_medio":32.2,
---       "metrics": { ...objeto _metricas completo... } }, ...]
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_insert_snapshots(
+CREATE OR REPLACE FUNCTION embaplan_insert_snapshots(
   p_batch_id BIGINT,
   p_rows     JSONB
 )
@@ -156,7 +148,7 @@ $$;
 --    Retorna 1 ponto por batch, em ordem cronológica,
 --    com o delta da métrica de saúde e lucro vs. ponto anterior.
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_ad_timeline(
+CREATE OR REPLACE FUNCTION embaplan_ad_timeline(
   p_anuncio_indice TEXT,
   p_limit          INTEGER DEFAULT 24
 )
@@ -228,7 +220,7 @@ $$;
 --    com a tendência vs. o batch imediatamente anterior.
 --    Base para o Dashboard (Épico 3).
 -- =============================================
-CREATE OR REPLACE FUNCTION sameka_embaplan_latest_overview(
+CREATE OR REPLACE FUNCTION embaplan_latest_overview(
   p_loja TEXT DEFAULT NULL
 )
 RETURNS TABLE(
@@ -291,21 +283,20 @@ AS $$
 $$;
 
 -- ---------------------------------------------
--- 8) Permissões (n8n usa o papel de serviço; mantemos
---    authenticated para uso via PostgREST/RPC se preciso)
+-- 8) Permissões
 -- ---------------------------------------------
-GRANT EXECUTE ON FUNCTION sameka_embaplan_create_batch(UUID, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_insert_snapshots(BIGINT, JSONB) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_ad_timeline(TEXT, INTEGER) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_embaplan_latest_overview(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_create_batch(UUID, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_insert_snapshots(BIGINT, JSONB) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_ad_timeline(TEXT, INTEGER) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_latest_overview(TEXT) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
--- DROP FUNCTION IF EXISTS sameka_embaplan_latest_overview(TEXT);
--- DROP FUNCTION IF EXISTS sameka_embaplan_ad_timeline(TEXT, INTEGER);
--- DROP FUNCTION IF EXISTS sameka_embaplan_insert_snapshots(BIGINT, JSONB);
--- DROP FUNCTION IF EXISTS sameka_embaplan_create_batch(UUID, TEXT, TEXT);
+-- DROP FUNCTION IF EXISTS embaplan_latest_overview(TEXT);
+-- DROP FUNCTION IF EXISTS embaplan_ad_timeline(TEXT, INTEGER);
+-- DROP FUNCTION IF EXISTS embaplan_insert_snapshots(BIGINT, JSONB);
+-- DROP FUNCTION IF EXISTS embaplan_create_batch(UUID, TEXT, TEXT);
 -- DROP TABLE IF EXISTS embaplan_analysis_snapshot;
 -- DROP TABLE IF EXISTS embaplan_upload_batch;
 -- NOTIFY pgrst, 'reload schema';

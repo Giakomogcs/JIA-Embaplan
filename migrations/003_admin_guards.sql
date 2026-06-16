@@ -1,5 +1,5 @@
 -- =============================================
--- Universo Tintas — 003: Admin-only guards
+-- Embaplan — 003: Admin-only guards
 -- Adds role check inside SECURITY DEFINER functions
 -- so only users with role='admin' can call them.
 -- =============================================
@@ -7,7 +7,7 @@
 -- =======  UP  ========
 
 -- Helper: check if caller is admin
-CREATE OR REPLACE FUNCTION sameka_is_admin()
+CREATE OR REPLACE FUNCTION embaplan_is_admin()
 RETURNS BOOLEAN
 SECURITY DEFINER
 SET search_path = auth, public
@@ -23,8 +23,8 @@ AS $$
 $$;
 
 -- list_users: admin-only
-DROP FUNCTION IF EXISTS sameka_admin_list_users();
-CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 RETURNS TABLE(
   user_id    UUID,
   email      TEXT,
@@ -38,7 +38,7 @@ LANGUAGE plpgsql
 STABLE
 AS $$
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
   RETURN QUERY
@@ -54,14 +54,14 @@ END;
 $$;
 
 -- confirm_user: admin-only
-CREATE OR REPLACE FUNCTION sameka_admin_confirm_user(p_user_id UUID)
+CREATE OR REPLACE FUNCTION embaplan_admin_confirm_user(p_user_id UUID)
 RETURNS VOID
 SECURITY DEFINER
 SET search_path = auth, public
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
   UPDATE auth.users
@@ -72,8 +72,8 @@ END;
 $$;
 
 -- update_user: admin-only
-DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT);
-CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT);
+CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
   p_user_id   UUID,
   p_full_name TEXT,
   p_role      TEXT DEFAULT NULL
@@ -86,7 +86,7 @@ AS $$
 DECLARE
   new_meta JSONB;
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
   new_meta := jsonb_build_object('full_name', p_full_name);
@@ -101,35 +101,35 @@ END;
 $$;
 
 -- delete_user: admin-only
-CREATE OR REPLACE FUNCTION sameka_admin_delete_user(p_user_id UUID)
+CREATE OR REPLACE FUNCTION embaplan_admin_delete_user(p_user_id UUID)
 RETURNS VOID
 SECURITY DEFINER
 SET search_path = auth, public
 LANGUAGE plpgsql
 AS $$
 BEGIN
-  IF NOT sameka_is_admin() THEN
+  IF NOT embaplan_is_admin() THEN
     RAISE EXCEPTION 'Acesso negado: apenas administradores.' USING ERRCODE = '42501';
   END IF;
   DELETE FROM auth.users WHERE id = p_user_id;
 END;
 $$;
 
-GRANT EXECUTE ON FUNCTION sameka_is_admin() TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_confirm_user(UUID) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION sameka_admin_delete_user(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_confirm_user(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION embaplan_admin_delete_user(UUID) TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
 
 -- =======  DOWN  ========
 -- Reverts to 002 versions (no admin guard)
 --
--- DROP FUNCTION IF EXISTS sameka_is_admin();
+-- DROP FUNCTION IF EXISTS embaplan_is_admin();
 --
--- DROP FUNCTION IF EXISTS sameka_admin_list_users();
--- CREATE OR REPLACE FUNCTION sameka_admin_list_users()
+-- DROP FUNCTION IF EXISTS embaplan_admin_list_users();
+-- CREATE OR REPLACE FUNCTION embaplan_admin_list_users()
 -- RETURNS TABLE(
 --   user_id    UUID,
 --   email      TEXT,
@@ -152,7 +152,7 @@ NOTIFY pgrst, 'reload schema';
 --   ORDER BY created_at DESC;
 -- $$;
 --
--- CREATE OR REPLACE FUNCTION sameka_admin_confirm_user(p_user_id UUID)
+-- CREATE OR REPLACE FUNCTION embaplan_admin_confirm_user(p_user_id UUID)
 -- RETURNS VOID
 -- SECURITY DEFINER
 -- SET search_path = auth, public
@@ -166,8 +166,8 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- DROP FUNCTION IF EXISTS sameka_admin_update_user(UUID, TEXT, TEXT);
--- CREATE OR REPLACE FUNCTION sameka_admin_update_user(
+-- DROP FUNCTION IF EXISTS embaplan_admin_update_user(UUID, TEXT, TEXT);
+-- CREATE OR REPLACE FUNCTION embaplan_admin_update_user(
 --   p_user_id   UUID,
 --   p_full_name TEXT,
 --   p_role      TEXT DEFAULT NULL
@@ -191,7 +191,7 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- CREATE OR REPLACE FUNCTION sameka_admin_delete_user(p_user_id UUID)
+-- CREATE OR REPLACE FUNCTION embaplan_admin_delete_user(p_user_id UUID)
 -- RETURNS VOID
 -- SECURITY DEFINER
 -- SET search_path = auth, public
@@ -202,9 +202,9 @@ NOTIFY pgrst, 'reload schema';
 -- END;
 -- $$;
 --
--- GRANT EXECUTE ON FUNCTION sameka_admin_list_users() TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_confirm_user(UUID) TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
--- GRANT EXECUTE ON FUNCTION sameka_admin_delete_user(UUID) TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_list_users() TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_confirm_user(UUID) TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_update_user(UUID, TEXT, TEXT) TO authenticated;
+-- GRANT EXECUTE ON FUNCTION embaplan_admin_delete_user(UUID) TO authenticated;
 --
 -- NOTIFY pgrst, 'reload schema';
