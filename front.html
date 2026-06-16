@@ -1302,6 +1302,32 @@
         max-height: 60vh;
         overflow-y: auto;
       }
+      .history-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+        margin: 10px 0 4px;
+      }
+      .hstat-cell {
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 7px 10px;
+        text-align: center;
+      }
+      .hstat-lbl {
+        font-size: 0.62rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        color: var(--text-secondary);
+      }
+      .hstat-val {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-top: 2px;
+      }
       .history-empty {
         text-align: center;
         color: var(--text-secondary);
@@ -1316,6 +1342,18 @@
       .history-chart .axis-label {
         font-size: 10px;
         fill: var(--text-secondary);
+      }
+      .history-chart .hist-dot {
+        cursor: pointer;
+      }
+      .history-chart .hist-dot-pt {
+        transition:
+          r 0.12s ease,
+          fill 0.12s ease;
+      }
+      .history-chart .hist-dot:hover .hist-dot-pt {
+        r: 6;
+        fill: var(--color-wine);
       }
       .history-point-list {
         display: flex;
@@ -2126,51 +2164,70 @@
       }
 
       /* BAR CHARTS (receita/ACOS por loja) */
+      .dash-cols > div {
+        background: var(--bg-chat);
+        border: 1px solid var(--border-color);
+        border-radius: 14px;
+        padding: 18px 20px 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+      }
+      .dash-cols > div .dash-section-title {
+        margin: 0 0 16px;
+      }
       .dash-bars {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 14px;
       }
       .dash-bar-row {
-        display: flex;
+        display: grid;
+        grid-template-columns: 36px 1fr auto;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
       }
       .dash-bar-label {
-        min-width: 92px;
-        font-size: 0.8rem;
-        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        background: var(--color-light-gray);
+        font-size: 0.82rem;
+        font-weight: 800;
         color: var(--text-primary);
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
       .dash-bar-track {
-        flex: 1;
-        height: 22px;
+        position: relative;
+        height: 14px;
         background: var(--color-light-gray);
-        border-radius: 6px;
+        border-radius: 999px;
         overflow: hidden;
       }
       .dash-bar-fill {
+        display: block;
         height: 100%;
-        border-radius: 6px;
+        border-radius: 999px;
         background: linear-gradient(
           90deg,
           var(--color-wine),
           var(--color-primary)
         );
-        min-width: 2px;
+        min-width: 6px;
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        transition: width 0.5s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .dash-bar-fill.bad {
-        background: linear-gradient(90deg, #b91c1c, #ef4444);
+        background: linear-gradient(90deg, #b91c1c, #f87171);
       }
       .dash-bar-val {
-        min-width: 90px;
+        min-width: 84px;
         text-align: right;
-        font-size: 0.82rem;
+        font-size: 0.9rem;
         font-weight: 800;
         color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
       }
 
       /* BENCHMARK TABLE (comparar lojas) */
@@ -7647,8 +7704,29 @@
         const meta = HISTORY_METRICS[metricKey];
         const series = pts.map((p) => Number(p[metricKey]));
         body.innerHTML =
+          renderHistoryStats(series, meta) +
           renderHistoryChart(pts, series, meta) +
           renderHistoryList(pts, metricKey, meta);
+      }
+
+      // Barra de estatísticas da métrica selecionada (média / mín / máx das planilhas)
+      function renderHistoryStats(series, meta) {
+        const valid = series.filter((v) => Number.isFinite(v));
+        if (valid.length === 0) return "";
+        const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+        const min = Math.min(...valid);
+        const max = Math.max(...valid);
+        const cell = (lbl, val) => `
+          <div class="hstat-cell">
+            <div class="hstat-lbl">${lbl}</div>
+            <div class="hstat-val">${meta.fmt(val)}</div>
+          </div>`;
+        return `<div class="history-stats">
+          ${cell("Média", avg)}
+          ${cell("Mínimo", min)}
+          ${cell("Máximo", max)}
+          <div class="hstat-cell"><div class="hstat-lbl">Planilhas</div><div class="hstat-val">${valid.length}</div></div>
+        </div>`;
       }
 
       function renderHistoryChart(pts, series, meta) {
@@ -7687,8 +7765,17 @@
             " " +
             py.toFixed(1) +
             " ";
-          dots += `<circle cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.5" fill="#7a0101"></circle>`;
           const d = p.data_upload ? new Date(p.data_upload) : null;
+          const fullDate = d
+            ? d.toLocaleDateString("pt-BR", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })
+            : "Versão " + (p.versao || i + 1);
+          const rot = p.rotulo ? ` · ${p.rotulo}` : "";
+          const tip = `${fullDate}${rot}: ${meta.fmt(v)}`;
+          dots += `<g class="hist-dot"><title>${tip}</title><circle class="hist-dot-hit" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="10" fill="transparent"></circle><circle class="hist-dot-pt" cx="${px.toFixed(1)}" cy="${py.toFixed(1)}" r="3.5" fill="#7a0101"></circle></g>`;
           const lbl = d
             ? d.toLocaleDateString("pt-BR", {
                 day: "2-digit",
@@ -7699,9 +7786,17 @@
         });
         const yTop = `<text class="axis-label" x="6" y="${padT + 4}">${meta.fmt(max)}</text>`;
         const yBot = `<text class="axis-label" x="6" y="${padT + innerH}">${meta.fmt(min)}</text>`;
+
+        // Linha de média (tracejada) da métrica nas planilhas
+        const avg = valid.reduce((a, b) => a + b, 0) / valid.length;
+        const avgY = y(avg);
+        const avgLine = `<line x1="${padL}" y1="${avgY.toFixed(1)}" x2="${W - padR}" y2="${avgY.toFixed(1)}" stroke="#6b7280" stroke-width="1.5" stroke-dasharray="5 4" opacity="0.8"></line>
+          <text class="axis-label" x="${W - padR}" y="${(avgY - 4).toFixed(1)}" text-anchor="end" fill="#6b7280">média ${meta.fmt(avg)}</text>`;
+
         return `<svg class="history-chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
           <line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT + innerH}" stroke="#e5e7eb"></line>
           <line x1="${padL}" y1="${padT + innerH}" x2="${W - padR}" y2="${padT + innerH}" stroke="#e5e7eb"></line>
+          ${avgLine}
           <path d="${pathD}" fill="none" stroke="#7a0101" stroke-width="2.5" stroke-linejoin="round"></path>
           ${dots}${xlabels}${yTop}${yBot}
         </svg>`;
@@ -9415,26 +9510,54 @@
       let qiSelectedFocos = new Set(["performance"]);
 
       // — Autocomplete engine —
+      // — Autocomplete engine —
+      function qiCampanhaValue(r) {
+        return r.titulo || r.anuncio_indice || "";
+      }
+
+      // Returns dashboardData rows filtered by the current selections of the
+      // OTHER fields, so each select only offers options that make sense.
+      function qiFilteredRows(excludeField) {
+        const lojaEl = document.getElementById("qiLojaAC");
+        const campEl = document.getElementById("qiCampanhaAC");
+        const prodEl = document.getElementById("qiProdutoAC");
+
+        const lojaSel = excludeField === "loja" ? [] : qiACGetSelected(lojaEl);
+        const campSel =
+          excludeField === "campanha" ? [] : qiACGetSelected(campEl);
+        const prodSel =
+          excludeField === "produto" ? [] : qiACGetSelected(prodEl);
+
+        return dashboardData.filter((r) => {
+          if (lojaSel.length && !lojaSel.includes(r.loja)) return false;
+          if (prodSel.length && !prodSel.includes(r.produto)) return false;
+          if (campSel.length && !campSel.includes(qiCampanhaValue(r)))
+            return false;
+          return true;
+        });
+      }
+
       function qiBuildOptions(acEl) {
         const field = acEl.dataset.field;
         const multi = acEl.dataset.multi === "true";
         const selected = qiACGetSelected(acEl);
+        const rows = qiFilteredRows(field);
         let items = [];
         if (field === "loja") {
           const lojas = [
-            ...new Set(dashboardData.map((r) => r.loja).filter(Boolean)),
+            ...new Set(rows.map((r) => r.loja).filter(Boolean)),
           ];
           items = lojas.map((l) => ({ value: l, label: l, sub: "" }));
         } else if (field === "campanha") {
-          items = dashboardData.map((r) => ({
-            value: r.titulo || r.anuncio_indice || "",
+          items = rows.map((r) => ({
+            value: qiCampanhaValue(r),
             label: r.titulo || r.anuncio_indice || "—",
             sub: [r.loja, r.produto].filter(Boolean).join(" · "),
             _loja: r.loja,
           }));
         } else if (field === "produto") {
           const map = new Map();
-          dashboardData.forEach((r) => {
+          rows.forEach((r) => {
             const key = r.produto || "";
             if (!key) return;
             if (!map.has(key))
@@ -9471,6 +9594,7 @@
             e.stopPropagation();
             pill.remove();
             qiACUpdateClear(acEl);
+            qiCascadeRefresh();
           });
           acEl.querySelector(".qi-ac-selected").insertBefore(pill, input);
         });
@@ -9530,6 +9654,7 @@
             dd.classList.remove("open");
             acEl.querySelector(".qi-ac-input").textContent = "";
             qiACUpdateClear(acEl);
+            qiCascadeRefresh();
           });
           dd.appendChild(allBtn);
         }
@@ -9558,6 +9683,7 @@
               qiACSetSelected(acEl, [it.value]);
               dd.classList.remove("open");
             }
+            qiCascadeRefresh();
             // Re-open to update selection state
             setTimeout(
               () =>
@@ -9577,6 +9703,31 @@
         document
           .querySelectorAll(".qi-ac-dropdown")
           .forEach((dd) => dd.classList.remove("open"));
+      }
+
+      // After a selection changes, drop selections in the other fields that no
+      // longer make sense, and refresh any open dropdown so options stay in sync.
+      function qiCascadeRefresh() {
+        ["qiLojaAC", "qiCampanhaAC", "qiProdutoAC"].forEach((id) => {
+          const acEl = document.getElementById(id);
+          if (!acEl) return;
+          const validValues = new Set(
+            qiBuildOptions(acEl).map((it) => it.value),
+          );
+          const current = qiACGetSelected(acEl);
+          const pruned = current.filter((v) => validValues.has(v));
+          if (pruned.length !== current.length) {
+            qiACSetSelected(acEl, pruned);
+          }
+        });
+        const openDd = document.querySelector(".qi-ac-dropdown.open");
+        if (openDd) {
+          const acEl = openDd.closest(".qi-ac");
+          if (acEl) {
+            const input = acEl.querySelector(".qi-ac-input");
+            qiACOpenDropdown(acEl, input.textContent);
+          }
+        }
       }
 
       // Setup autocomplete behavior for each .qi-ac element
@@ -9607,6 +9758,7 @@
               if (pills.length > 0) {
                 pills[pills.length - 1].remove();
                 qiACUpdateClear(acEl);
+                qiCascadeRefresh();
               }
             }
           });
@@ -9619,6 +9771,7 @@
             acEl.querySelectorAll(".qi-ac-pill").forEach((p) => p.remove());
             input.textContent = "";
             qiACUpdateClear(acEl);
+            qiCascadeRefresh();
             qiACOpenDropdown(acEl, "");
             input.focus();
           });
@@ -10492,7 +10645,29 @@
           })
           .join("");
 
+        // Detecta rodadas com dados praticamente idênticos (possível upload
+        // repetido / mesma planilha enviada em meses diferentes).
+        const comparedKeys = rows.filter((r) => r.key !== "total_anuncios");
+        const identicalCount = comparedKeys.filter((r) => {
+          const valA = Number(batchA[r.key]) || 0;
+          const valB = Number(batchB[r.key]) || 0;
+          const base = Math.max(Math.abs(valA), Math.abs(valB));
+          if (base < 1e-9) return true;
+          return Math.abs(valA - valB) / base < 0.001;
+        }).length;
+        const nearlyIdentical =
+          identicalCount >= comparedKeys.length - 1 &&
+          batchA.batch_id !== batchB.batch_id;
+
+        const warningHtml = nearlyIdentical
+          ? `<div style="margin-bottom:12px;padding:10px 14px;border-radius:8px;background:rgba(217,119,6,0.1);border:1px solid #d97706;color:#92400e;font-size:12.5px;font-weight:600;display:flex;align-items:flex-start;gap:8px;">
+              <span style="font-size:15px;line-height:1;">⚠️</span>
+              <span>As duas rodadas têm métricas quase idênticas. Verifique se foram enviadas planilhas diferentes — pode ter sido feito upload do mesmo arquivo.</span>
+            </div>`
+          : "";
+
         return `
+          ${warningHtml}
           <table class="dash-table" style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="text-align:left;border-bottom:2px solid var(--border-color);">
@@ -10694,6 +10869,8 @@
       document.getElementById("qiConfirmBtn").addEventListener("click", () => {
         const prompt = buildQuickInputPrompt();
         closeQuickInputModal();
+        // Cada análise de campanha começa em um chat novo.
+        startNewChat();
         elements.messageInput.value = prompt;
         elements.messageInput.dispatchEvent(new Event("input"));
         setTimeout(() => handleSendMessage(new Event("submit")), 50);
