@@ -99,15 +99,35 @@
     },
     {
       "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_purge_pending_recommendations($1::bigint) AS recs_purgadas;",
+        "options": {
+          "queryReplacement": "={{ [$('Create Batch (RPC)').first().json.batch_id] }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [4224, 2832],
+      "id": "a1b2c3d4-purge-recs-pending-0001",
+      "name": "Purge Pending Recs (RPC)",
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ JSON.stringify({ success: true, batch_id: $('Create Batch (RPC)').first().json.batch_id, anuncios_gravados: $json.anuncios_gravados }) }}",
+        "responseBody": "={{ JSON.stringify({ success: true, batch_id: $('Create Batch (RPC)').first().json.batch_id, anuncios_gravados: $('Insert Snapshots (RPC)').first().json.anuncios_gravados, recs_purgadas: $json.recs_purgadas }) }}",
         "options": {
           "responseCode": 200
         }
       },
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.5,
-      "position": [4336, 2832],
+      "position": [4448, 2832],
       "id": "781df898-4d86-4b29-aa33-5033c217a222",
       "name": "Respond Capture"
     },
@@ -594,6 +614,17 @@
       ]
     },
     "Insert Snapshots (RPC)": {
+      "main": [
+        [
+          {
+            "node": "Purge Pending Recs (RPC)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Purge Pending Recs (RPC)": {
       "main": [
         [
           {

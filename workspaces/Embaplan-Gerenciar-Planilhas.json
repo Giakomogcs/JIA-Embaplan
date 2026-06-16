@@ -1,0 +1,219 @@
+{
+  "name": "Embaplan-Gerenciar-Planilhas",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## 🗂️ Gerenciar Planilhas (Batches)\n\nPainel de gestão das planilhas enviadas. Três entradas:\n\n**1) GET `/webhook/embaplan-batches`** — lista todas as planilhas (batch) com período, rótulo, nº de anúncios e contagem de recomendações (total/pendentes).\n\n**2) POST `/webhook/embaplan-batch-update`** — `{ batch_id, periodo?, rotulo? }` altera a data e/ou o rótulo de uma planilha.\n\n**3) POST `/webhook/embaplan-batch-delete`** — `{ batch_id }` apaga a planilha (snapshots caem em cascata; recomendações pendentes do agente desse batch também são removidas).\n\n### ⚙️ Antes de ativar\n1. Rode a migration `018_batch_management.sql` no Supabase.\n2. Os nós Postgres usam a credencial `Supabase_database`.",
+        "height": 320,
+        "width": 480,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [-480, 80],
+      "id": "manage-doc-id",
+      "name": "Doc"
+    },
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "embaplan-batches",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "manage-list-webhook-id",
+      "name": "Webhook - List Batches",
+      "position": [-200, 100],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "embaplan-batches"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT COALESCE(json_agg(t), '[]'::json) AS planilhas FROM embaplan_list_batches() t;",
+        "options": {}
+      },
+      "id": "manage-list-db-id",
+      "name": "List Batches (RPC)",
+      "position": [40, 100],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"planilhas\": {{ JSON.stringify($json.planilhas) }}\n}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "manage-list-respond-id",
+      "name": "Respond List",
+      "position": [280, 100],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-batch-update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "manage-update-webhook-id",
+      "name": "Webhook - Update Batch",
+      "position": [-200, 320],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "embaplan-batch-update"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nif (!body.batch_id) {\n  throw new Error('batch_id é obrigatório.');\n}\nreturn [{\n  json: {\n    p_batch_id: Number(body.batch_id),\n    p_periodo: body.periodo || null,\n    p_rotulo: body.rotulo || null\n  }\n}];"
+      },
+      "id": "manage-update-parse-id",
+      "name": "Parse Update Args",
+      "position": [40, 320],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_update_batch($1::bigint, $2::text, $3::text) AS batch_id;",
+        "options": {
+          "queryReplacement": "={{ [$json.p_batch_id, $json.p_periodo || null, $json.p_rotulo || null] }}"
+        }
+      },
+      "id": "manage-update-db-id",
+      "name": "Update Batch (RPC)",
+      "position": [280, 320],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, batch_id: $json.batch_id }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "manage-update-respond-id",
+      "name": "Respond Update",
+      "position": [520, 320],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "embaplan-batch-delete",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "manage-delete-webhook-id",
+      "name": "Webhook - Delete Batch",
+      "position": [-200, 540],
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "webhookId": "embaplan-batch-delete"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || {};\nif (!body.batch_id) {\n  throw new Error('batch_id é obrigatório.');\n}\nreturn [{\n  json: { p_batch_id: Number(body.batch_id) }\n}];"
+      },
+      "id": "manage-delete-parse-id",
+      "name": "Parse Delete Args",
+      "position": [40, 540],
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT embaplan_delete_batch($1::bigint) AS snapshots_removidos;",
+        "options": {
+          "queryReplacement": "={{ [$json.p_batch_id] }}"
+        }
+      },
+      "id": "manage-delete-db-id",
+      "name": "Delete Batch (RPC)",
+      "position": [280, 540],
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "credentials": {
+        "postgres": {
+          "id": "jFjeYH6Nt3aRNkoM",
+          "name": "Supabase_database"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ success: true, snapshots_removidos: $json.snapshots_removidos }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      },
+      "id": "manage-delete-respond-id",
+      "name": "Respond Delete",
+      "position": [520, 540],
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook - List Batches": {
+      "main": [[{ "node": "List Batches (RPC)", "type": "main", "index": 0 }]]
+    },
+    "List Batches (RPC)": {
+      "main": [[{ "node": "Respond List", "type": "main", "index": 0 }]]
+    },
+    "Webhook - Update Batch": {
+      "main": [[{ "node": "Parse Update Args", "type": "main", "index": 0 }]]
+    },
+    "Parse Update Args": {
+      "main": [[{ "node": "Update Batch (RPC)", "type": "main", "index": 0 }]]
+    },
+    "Update Batch (RPC)": {
+      "main": [[{ "node": "Respond Update", "type": "main", "index": 0 }]]
+    },
+    "Webhook - Delete Batch": {
+      "main": [[{ "node": "Parse Delete Args", "type": "main", "index": 0 }]]
+    },
+    "Parse Delete Args": {
+      "main": [[{ "node": "Delete Batch (RPC)", "type": "main", "index": 0 }]]
+    },
+    "Delete Batch (RPC)": {
+      "main": [[{ "node": "Respond Delete", "type": "main", "index": 0 }]]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "manage-workflow-version-id",
+  "meta": {
+    "instanceId": "03d32a206f2d8840fce482e6c587726f18775bd9177e9401c00ca76d3086ad41"
+  },
+  "id": "manage-workflow-id",
+  "tags": []
+}

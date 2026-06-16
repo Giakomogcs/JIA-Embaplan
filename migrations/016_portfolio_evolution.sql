@@ -41,7 +41,7 @@ BEGIN
     COALESCE(AVG(s.roas), 0)::NUMERIC AS roas_medio,
     COALESCE(AVG(s.ctr), 0)::NUMERIC AS ctr_medio,
     COALESCE(AVG(s.conversao), 0)::NUMERIC AS conversao_media,
-    COALESCE(AVG(s.ticket_medio_valor), 0)::NUMERIC AS ticket_medio_valor
+    COALESCE(AVG(s.ticket_medio), 0)::NUMERIC AS ticket_medio_valor
   FROM embaplan_upload_batch b
   JOIN embaplan_analysis_snapshot s ON s.batch_id = b.id
   WHERE (p_loja IS NULL OR s.loja = p_loja)

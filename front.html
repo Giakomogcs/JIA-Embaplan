@@ -4149,6 +4149,127 @@
         line-height: 1.5;
       }
 
+      /* Custom styles for Evolução Tab and Alterações */
+      .dash-metric-chip {
+        padding: 6px 12px;
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 20px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .batch-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        margin-left: 4px;
+        padding: 0;
+        background: var(--bg-body);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .batch-action-btn:hover {
+        background: var(--border-color);
+        color: var(--text-primary);
+      }
+      .batch-action-btn.danger:hover {
+        background: #b91c1c;
+        border-color: #b91c1c;
+        color: #fff;
+      }
+      .batch-action-btn i {
+        width: 15px;
+        height: 15px;
+      }
+      .dash-metric-chip:hover {
+        background: var(--border-color);
+        color: var(--text-primary);
+      }
+      .dash-metric-chip.active {
+        background: var(--color-primary);
+        color: white;
+        border-color: var(--color-primary);
+      }
+      .dash-table {
+        margin-top: 15px;
+      }
+      .dash-table th, .dash-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 13px;
+      }
+      .dash-table th {
+        font-weight: 700;
+        color: var(--text-secondary);
+      }
+      .good {
+        color: #059669 !important;
+      }
+      .bad {
+        color: #dc2626 !important;
+      }
+      .change-item {
+        transition: background-color 0.2s;
+      }
+      .change-item:hover {
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+      [data-theme="dark"] .change-item:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+      }
+      .alterado-badge {
+        background: #fef3c7;
+        color: #d97706;
+        border: 1px solid #fde68a;
+        padding: 2px 6px;
+        font-size: 10px;
+        font-weight: 700;
+        border-radius: 4px;
+        text-transform: uppercase;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        transition: all 0.2s;
+      }
+      .alterado-badge:hover {
+        background: #fde68a;
+      }
+      [data-theme="dark"] .alterado-badge {
+        background: rgba(217, 119, 6, 0.2);
+        color: #fbbf24;
+        border-color: rgba(217, 119, 6, 0.3);
+      }
+      [data-theme="dark"] .alterado-badge:hover {
+        background: rgba(217, 119, 6, 0.3);
+      }
+      .dash-analyze-btn {
+        background: transparent;
+        border: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        width: 28px;
+        height: 28px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .dash-analyze-btn:hover {
+        border-color: var(--color-primary);
+        color: var(--color-primary);
+        background: rgba(122, 1, 1, 0.05);
+      }
+
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -4475,6 +4596,29 @@
     </div>
 
 
+    <!-- Edit Batch (planilha) Modal -->
+    <div class="confirm-modal-backdrop" id="batchEditModal">
+      <div class="confirm-modal">
+        <h3 class="confirm-title">Editar planilha</h3>
+        <p class="confirm-text" style="margin-bottom: 12px;">
+          Altere a data (mês de referência) e o nome desta planilha. A data define a posição dela na linha do tempo.
+        </p>
+        <label style="font-size:12px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Data da planilha</label>
+        <input type="date" id="batchEditDate" class="login-input" style="margin-bottom: 12px;" />
+        <label style="font-size:12px;font-weight:700;color:var(--text-secondary);display:block;margin-bottom:4px;">Nome (rótulo)</label>
+        <input type="text" id="batchEditLabel" class="login-input" style="margin-bottom: 15px;" placeholder="Ex.: Abril 2026" />
+        <div class="confirm-actions">
+          <button class="btn-modal btn-cancel" id="batchEditCancelBtn">
+            Cancelar
+          </button>
+          <button class="btn-modal btn-confirm" id="batchEditConfirmBtn">
+            Salvar
+          </button>
+        </div>
+      </div>
+    </div>
+
+
     <!-- Ad History / Timeline Modal -->
     <div class="confirm-modal-backdrop" id="historyModal">
       <div class="confirm-modal history-modal">
@@ -4592,6 +4736,9 @@
         <button class="dash-tab" data-tab="oportunidades">
           <i data-lucide="target"></i> O que revisar hoje
         </button>
+        <button class="dash-tab" data-tab="evolucao">
+          <i data-lucide="trending-up"></i> Evolução
+        </button>
       </div>
       <div class="dashboard-content" id="dashboardContent">
         <div class="history-empty">Carregando dados…</div>
@@ -4707,6 +4854,10 @@
       const TAG_RENAME_URL = `${API_BASE}/embaplan-rename-tag`;
       const TAG_DELETE_URL = `${API_BASE}/embaplan-delete-tag`;
       const AUTOCOMPLETE_URL = `${API_BASE}/embaplan-autocomplete`;
+      const EVOLUTION_URL = `${API_BASE}/embaplan-portfolio-evolution`;
+      const DETECT_CHANGES_URL = `${API_BASE}/embaplan-detect-changes`;
+      const BATCH_UPDATE_URL = `${API_BASE}/embaplan-batch-update`;
+      const BATCH_DELETE_URL = `${API_BASE}/embaplan-batch-delete`;
 
       // ============================================
       // ÍCONES SVG MONOCROMÁTICOS (sem emojis)
@@ -6394,17 +6545,17 @@
           pendingAction = "uploadSheet";
           pendingUploadFile = payload;
           const now = new Date();
-          const defMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-          titleEl.textContent = "Adicionar planilha do mês";
+          const defDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+          titleEl.textContent = "Adicionar planilha";
           textEl.innerHTML =
             `Arquivo selecionado: <strong>“${payload.name}”</strong>.<br><br>` +
-            '<label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Mês de referência</label>' +
-            `<input type="month" id="uploadPeriodo" value="${defMonth}" max="${defMonth}" ` +
+            '<label style="display:block; font-size:13px; font-weight:600; margin-bottom:6px;">Data de referência</label>' +
+            `<input type="date" id="uploadPeriodo" value="${defDate}" ` +
             'style="width:100%; padding:9px 10px; border:1px solid var(--color-border,#d0d0d0); border-radius:8px; font-size:14px; box-sizing:border-box;" />' +
             '<p style="font-size:12px; color:var(--color-text-secondary,#777); margin:10px 0 0;">' +
-            "Cada mês vira um ponto na linha do tempo de cada anúncio. Reenviar o mesmo mês substitui os dados daquele mês (não duplica)." +
+            "Cada data selecionada vira um ponto na linha do tempo de cada anúncio. Reenviar a mesma data substitui os dados daquele dia (não duplica)." +
             "</p>";
-          confirmBtn.textContent = "Enviar mês";
+          confirmBtn.textContent = "Enviar planilha";
           confirmBtn.style.background = "#2563eb";
         }
 
@@ -6502,7 +6653,7 @@
           }
         } else if (pendingAction === "uploadSheet" && pendingUploadFile) {
           const file = pendingUploadFile;
-          // Lê o mês de referência ANTES de fechar o modal (o input vive nele).
+          // Lê a data de referência ANTES de fechar o modal (o input vive nele).
           const periodoInput = document.getElementById("uploadPeriodo");
           const periodo =
             periodoInput && periodoInput.value ? periodoInput.value : "";
@@ -6521,7 +6672,10 @@
             "Dezembro",
           ];
           let rotulo = "";
-          if (/^\d{4}-\d{2}$/.test(periodo)) {
+          if (/^\d{4}-\d{2}-\d{2}$/.test(periodo)) {
+            const [ano, mes, dia] = periodo.split("-");
+            rotulo = `${dia}/${mes}/${ano}`;
+          } else if (/^\d{4}-\d{2}$/.test(periodo)) {
             const [ano, mes] = periodo.split("-");
             rotulo = `${MESES[Number(mes) - 1]}/${ano}`;
           }
@@ -7653,6 +7807,10 @@
           content.innerHTML = emojiToSvg(renderComparar(rows));
         else if (tab === "oportunidades")
           content.innerHTML = emojiToSvg(renderOportunidades(rows));
+        else if (tab === "evolucao") {
+          content.innerHTML = '<div class="history-empty">Carregando dados da evolução...</div>';
+          loadAndRenderEvolucao();
+        }
         else content.innerHTML = emojiToSvg(renderHome(rows));
         if (window.lucide) lucide.createIcons();
       }
@@ -8343,6 +8501,13 @@
         const link = r.link
           ? `<a class="dash-link" href="${escapeHtml(r.link)}" target="_blank" rel="noopener noreferrer" title="Abrir anúncio"><i data-lucide="external-link"></i></a>`
           : "";
+        
+        // Deteção de alteração no cache do dashboard
+        const hasChange = dashboardAlterations.some(c => String(c.anuncio_indice) === String(r.anuncio_indice));
+        const changeBadge = hasChange 
+          ? `<span class="alterado-badge" data-index="${indice}" title="Clique para ver alterações">⚠️ Alterado</span>`
+          : "";
+
         return `<div class="dash-row" data-index="${indice}" title="Clique para ver o histórico e os gráficos">
           <span class="dash-row-rank">${rank}</span>
           <div class="dash-row-main">
@@ -8350,12 +8515,14 @@
             <div class="dash-row-sub">${sub}</div>
             <div class="dash-row-tags">
               ${badge}
+              ${changeBadge}
               <span class="dash-trend ${trend}">${trendLbl}</span>
             </div>
           </div>
           ${metricHtml}
           <div class="dash-row-actions">
             ${link}
+            <button class="dash-analyze-btn" data-index="${indice}" data-loja="${escapeHtml(r.loja || '')}" data-produto="${escapeHtml(r.produto || '')}" data-titulo="${titulo}" data-campanha="${escapeHtml(r.titulo || r.anuncio_indice || '')}" title="Analisar anúncio com contexto"><i data-lucide="search"></i></button>
             <button class="dash-hist-btn" data-index="${indice}" title="Ver histórico e gráficos"><i data-lucide="line-chart"></i></button>
           </div>
         </div>`;
@@ -8474,6 +8641,29 @@
       document
         .getElementById("dashboardContent")
         .addEventListener("click", (e) => {
+          // Captura botão de análise rápida antes de verificar a linha inteira
+          const analyzeBtn = e.target.closest(".dash-analyze-btn");
+          if (analyzeBtn) {
+            e.stopPropagation();
+            const defaults = {
+              loja: analyzeBtn.getAttribute("data-loja") || "",
+              produto: analyzeBtn.getAttribute("data-produto") || "",
+              campanha: analyzeBtn.getAttribute("data-campanha") || analyzeBtn.getAttribute("data-titulo") || ""
+            };
+            closeDashboard();
+            openQuickInputModal(defaults);
+            return;
+          }
+
+          // Captura clique no badge de alterado antes de abrir a linha do tempo
+          const alteradoBadge = e.target.closest(".alterado-badge");
+          if (alteradoBadge) {
+            e.stopPropagation();
+            const idx = alteradoBadge.getAttribute("data-index");
+            showAdChangesPopover(idx, alteradoBadge);
+            return;
+          }
+
           // Seletor de modo de comparação
           const modeBtn = e.target.closest(".cmp-mode");
           if (modeBtn) {
@@ -8975,6 +9165,25 @@
         }
       });
 
+      // Edit Batch (planilha) Modal
+      document.getElementById("batchEditCancelBtn").addEventListener("click", () => {
+        document.getElementById("batchEditModal").classList.remove("active");
+        batchEditTargetId = null;
+      });
+      document.getElementById("batchEditConfirmBtn").addEventListener("click", saveBatchEdit);
+      document.getElementById("batchEditModal").addEventListener("click", (e) => {
+        if (e.target.id === "batchEditModal") {
+          document.getElementById("batchEditModal").classList.remove("active");
+          batchEditTargetId = null;
+        }
+      });
+      document.getElementById("batchEditLabel").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          saveBatchEdit();
+        }
+      });
+
 
       // ============================================
       // QUICK INPUT MODAL (PRD-1) — com autocomplete
@@ -9212,6 +9421,794 @@
           dashboardDataLoading = false;
           updateACDropdownsLoadedState();
         }
+      }
+
+      // ============================================
+      // EVOLUÇÃO DO PORTFÓLIO & COMPARAÇÃO (PRD-2 & PRD-3)
+      // ============================================
+      let evolutionState = {
+        selectedMetric: "lucro_total",
+        selectedProduct: "",
+        compBatchA: null,
+        compBatchB: null
+      };
+      let dashboardAlterations = [];
+
+      function showAdChangesPopover(idx, anchor) {
+        const existing = document.getElementById("adChangesPopover");
+        if (existing) existing.remove();
+
+        const changes = dashboardAlterations.filter(c => String(c.anuncio_indice) === String(idx));
+        if (changes.length === 0) return;
+
+        const changeItems = changes.map(c => {
+          let icon = "⚙️";
+          if (c.tipo === "preco") icon = "🏷️";
+          else if (c.tipo === "investimento") icon = "💰";
+          else if (c.tipo === "status") icon = "📊";
+          else if (c.tipo === "novo") icon = "➕";
+          else if (c.tipo === "removido") icon = "➖";
+
+          return `
+            <div style="padding: 8px 0; border-bottom: 1px solid var(--border-color); font-size: 12px; line-height: 1.4;">
+              <span style="margin-right: 6px;">${icon}</span>
+              <strong style="color: var(--text-primary);">${c.campo || 'Alteração'}:</strong> 
+              <span style="color: var(--text-secondary);">${c.resumo || ''}</span>
+            </div>
+          `;
+        }).join("");
+
+        const popover = document.createElement("div");
+        popover.id = "adChangesPopover";
+        popover.style.position = "absolute";
+        popover.style.zIndex = "10000";
+        popover.style.width = "300px";
+        popover.style.backgroundColor = "var(--bg-message-assistant)";
+        popover.style.border = "1px solid var(--border-color)";
+        popover.style.borderRadius = "8px";
+        popover.style.boxShadow = "0 4px 12px rgba(0,0,0,0.5)";
+        popover.style.padding = "12px";
+
+        popover.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 6px;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--color-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 240px;">🔄 Alterações do Anúncio</span>
+            <button id="closeAdChangesPopover" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 14px; padding: 0 4px;">✕</button>
+          </div>
+          <div style="max-height: 200px; overflow-y: auto;">
+            ${changeItems}
+          </div>
+        `;
+
+        document.body.appendChild(popover);
+
+        const rect = anchor.getBoundingClientRect();
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+
+        let top = rect.bottom + scrollTop + 6;
+        let left = rect.left + scrollLeft;
+
+        if (left + 300 > window.innerWidth) {
+          left = window.innerWidth - 320;
+        }
+        if (top + 250 > window.innerHeight + scrollTop) {
+          top = rect.top + scrollTop - popover.offsetHeight - 6;
+        }
+
+        popover.style.top = top + "px";
+        popover.style.left = left + "px";
+
+        const closeBtn = popover.querySelector("#closeAdChangesPopover");
+        closeBtn.addEventListener("click", () => popover.remove());
+
+        const outsideClickListener = (e) => {
+          if (!popover.contains(e.target) && !anchor.contains(e.target)) {
+            popover.remove();
+            document.removeEventListener("click", outsideClickListener);
+          }
+        };
+        setTimeout(() => {
+          document.addEventListener("click", outsideClickListener);
+        }, 50);
+      }
+
+      async function loadAndRenderEvolucao() {
+        const content = document.getElementById("dashboardContent");
+        const loja = document.getElementById("dashboardLojaFilter").value || "";
+        const produto = evolutionState.selectedProduct || "";
+
+        let evoUrl = `${EVOLUTION_URL}`;
+        const queryParams = [];
+        if (loja) queryParams.push(`loja=${encodeURIComponent(loja)}`);
+        if (produto) queryParams.push(`produto=${encodeURIComponent(produto)}`);
+        if (queryParams.length > 0) evoUrl += `?${queryParams.join("&")}`;
+
+        try {
+          // Fetch evolution and changes in parallel
+          const [evoResp, changesResp] = await Promise.all([
+            fetch(evoUrl, { cache: "no-store" }),
+            fetch(DETECT_CHANGES_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({})
+            }).catch(() => null)
+          ]);
+
+          if (!evoResp.ok) throw new Error("HTTP " + evoResp.status);
+          const evoText = await evoResp.text();
+          const evoData = evoText ? JSON.parse(evoText) : {};
+          const batches = Array.isArray(evoData.evolucao) ? evoData.evolucao : [];
+
+          if (changesResp && changesResp.ok) {
+            const chData = await changesResp.json();
+            dashboardAlterations = Array.isArray(chData.alteracoes) ? chData.alteracoes : [];
+          }
+
+          renderEvolucaoTab(batches, dashboardAlterations);
+        } catch (err) {
+          console.error("Error loading evolution data:", err);
+          content.innerHTML = `
+            <div class="history-empty">
+              Não foi possível carregar a evolução de métricas.<br>
+              <small>${escapeHtml(err.message || err)}</small>
+            </div>
+          `;
+        }
+      }
+
+      function renderEvolucaoTab(batches, changes) {
+        const content = document.getElementById("dashboardContent");
+        const lojaFilter = document.getElementById("dashboardLojaFilter").value || "";
+        const prodFilter = evolutionState.selectedProduct || "";
+
+        if (batches.length === 0) {
+          content.innerHTML = '<div class="history-empty">Ainda não há dados de evolução de batches suficientes.</div>';
+          return;
+        }
+
+        // Filter changes based on active dashboard/evolution filters
+        const filteredChanges = changes.filter(ch => {
+          if (lojaFilter && ch.loja !== lojaFilter) return false;
+          if (prodFilter && ch.produto !== prodFilter) return false;
+          return true;
+        });
+
+        // Dropdown options for product filter
+        const uniqueProducts = [...new Set(dashboardData.map(r => r.produto).filter(Boolean))].sort();
+        const prodOptions = uniqueProducts.map(p => 
+          `<option value="${escapeHtml(p)}" ${evolutionState.selectedProduct === p ? "selected" : ""}>${escapeHtml(p)}</option>`
+        ).join("");
+
+        // Metric Selector chips
+        const metrics = [
+          { key: "lucro_total", label: "💰 Lucro Total" },
+          { key: "acos_medio", label: "📉 ACOS Médio" },
+          { key: "roas_medio", label: "🎯 ROAS Médio" },
+          { key: "ticket_medio_valor", label: "🎟️ Ticket Médio" }
+        ];
+
+        const metricChips = metrics.map(m => {
+          const activeCls = evolutionState.selectedMetric === m.key ? "active" : "";
+          return `<button class="dash-metric-chip ${activeCls}" data-metric="${m.key}">${m.label}</button>`;
+        }).join("");
+
+        // SVG Graph
+        const svgChartHtml = drawEvolucaoSVG(batches, evolutionState.selectedMetric);
+
+        // Trend KPIs (comparing last batch vs one before)
+        let kpiHtml = "";
+        if (batches.length >= 1) {
+          const latest = batches[batches.length - 1];
+          const previous = batches[batches.length - 2] || null;
+
+          kpiHtml = `
+            <div class="kpi-grid" style="margin-top: 20px;">
+              ${renderTrendCard("Lucro Total", latest.lucro_total, previous?.lucro_total, "brl")}
+              ${renderTrendCard("ACOS Médio", latest.acos_medio, previous?.acos_medio, "pct")}
+              ${renderTrendCard("ROAS Médio", latest.roas_medio, previous?.roas_medio, "roas")}
+              ${renderTrendCard("Ticket Médio", latest.ticket_medio_valor, previous?.ticket_medio_valor, "brl")}
+              ${renderTrendCard("Total Anúncios", latest.total_anuncios, previous?.total_anuncios, "num")}
+            </div>
+          `;
+        }
+
+        // Summary Table
+        const tableRows = [...batches].reverse().map(b => {
+          const dt = b.created_at ? new Date(b.created_at).toLocaleDateString("pt-BR") : "";
+          const isoDate = b.periodo
+            ? String(b.periodo).slice(0, 10)
+            : (b.created_at ? new Date(b.created_at).toISOString().slice(0, 10) : "");
+          return `
+            <tr>
+              <td><strong>${escapeHtml(b.rotulo)}</strong></td>
+              <td>${dt}</td>
+              <td>${fmtBRL(b.lucro_total)}</td>
+              <td>${b.acos_medio.toFixed(1)}%</td>
+              <td>${b.roas_medio.toFixed(1)}x</td>
+              <td>${fmtBRL(b.ticket_medio_valor)}</td>
+              <td>${b.total_anuncios}</td>
+              <td style="white-space: nowrap; text-align: right;">
+                <button class="batch-action-btn" data-action="edit"
+                  data-batch-id="${b.batch_id}"
+                  data-rotulo="${escapeHtml(b.rotulo || "")}"
+                  data-periodo="${isoDate}"
+                  title="Editar data/rótulo desta planilha">
+                  <i data-lucide="pencil"></i>
+                </button>
+                <button class="batch-action-btn danger" data-action="delete"
+                  data-batch-id="${b.batch_id}"
+                  data-rotulo="${escapeHtml(b.rotulo || "")}"
+                  title="Apagar os dados desta planilha">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join("");
+
+        const summaryTableHtml = `
+          <div class="scope-block" style="margin-top: 25px;">
+            <div class="dash-section-title">📋 Histórico de Rodadas <span style="font-weight:400;font-size:12px;color:var(--text-secondary);">— clique no lápis para editar a data ou na lixeira para apagar a planilha</span></div>
+            <table class="dash-table" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <thead>
+                <tr style="text-align: left; border-bottom: 2px solid var(--border-color); padding-bottom: 8px;">
+                  <th>Período</th>
+                  <th>Data Upload</th>
+                  <th>Lucro Total</th>
+                  <th>ACOS Médio</th>
+                  <th>ROAS Médio</th>
+                  <th>Ticket Médio</th>
+                  <th>Anúncios</th>
+                  <th style="text-align: right;">Ações</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRows}
+              </tbody>
+            </table>
+          </div>
+        `;
+
+        // Automatic Insights
+        let insightsHtml = "";
+        if (batches.length >= 2) {
+          const latest = batches[batches.length - 1];
+          const previous = batches[batches.length - 2];
+          insightsHtml = generateEvolucaoInsights(latest, previous);
+        }
+
+        // Alterações Detectadas panel
+        let changesHtml = "";
+        if (filteredChanges.length > 0) {
+          const changeItems = filteredChanges.map(c => {
+            let icon = "⚙️";
+            if (c.tipo === "preco") icon = "🏷️";
+            else if (c.tipo === "investimento") icon = "💰";
+            else if (c.tipo === "status") icon = "📊";
+            else if (c.tipo === "novo") icon = "➕";
+            else if (c.tipo === "removido") icon = "➖";
+
+            return `
+              <div class="change-item" style="padding: 10px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px;">
+                <span style="font-size: 1.2rem;">${icon}</span>
+                <div>
+                  <div style="font-size: 13px; font-weight: 600; color: var(--text-primary);">${escapeHtml(c.anuncio)} <span style="font-weight: 400; font-size: 11px; color: var(--text-secondary);">(${escapeHtml(c.loja)} · ${escapeHtml(c.produto)})</span></div>
+                  <div style="font-size: 12px; color: var(--text-secondary); margin-top: 2px;">${escapeHtml(c.resumo)}</div>
+                </div>
+              </div>
+            `;
+          }).join("");
+
+          changesHtml = `
+            <div class="scope-block" style="margin-top: 25px;">
+              <div class="dash-section-title">🔄 Alterações Detectadas nesta rodada</div>
+              <div class="dash-alerts" style="max-height: 250px; overflow-y: auto; background: var(--bg-message-assistant); border: 1px solid var(--border-color); border-radius: 8px; margin-top: 10px;">
+                ${changeItems}
+              </div>
+            </div>
+          `;
+        } else {
+          changesHtml = `
+            <div class="scope-block" style="margin-top: 25px;">
+              <div class="dash-section-title">🔄 Alterações Detectadas nesta rodada</div>
+              <div style="padding: 20px; text-align: center; border: 1px dashed var(--border-color); border-radius: 8px; font-size: 12px; color: var(--text-secondary); margin-top: 10px;">
+                ✅ Nenhuma alteração relevante detectada desde o último upload.
+              </div>
+            </div>
+          `;
+        }
+
+        // Compare 2 Batches side-by-side
+        const compareSelectorHtml = renderBatchComparisonSelector(batches);
+
+        // Render full Evolução Tab layout
+        content.innerHTML = `
+          <div class="scope-block" style="margin-bottom: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+              <div class="scope-banner total" style="flex: 1; min-width: 200px;">📈 Evolução do Portfólio de Anúncios</div>
+              <div style="display: flex; gap: 10px; align-items: center;">
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Produto:</label>
+                <select id="evolucaoProdutoFilter" class="dashboard-filter" style="width: 200px;">
+                  <option value="">Todos os produtos</option>
+                  ${prodOptions}
+                </select>
+              </div>
+            </div>
+            
+            <div style="margin-top: 20px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
+              ${metricChips}
+            </div>
+
+            <div style="margin-top: 20px; background: var(--bg-message-assistant); border: 1px solid var(--border-color); border-radius: 12px; padding: 20px;">
+              ${svgChartHtml}
+            </div>
+          </div>
+
+          ${kpiHtml}
+          ${insightsHtml}
+          ${changesHtml}
+          ${compareSelectorHtml}
+          ${summaryTableHtml}
+        `;
+
+        // Wire event listeners
+        document.getElementById("evolucaoProdutoFilter").addEventListener("change", (e) => {
+          evolutionState.selectedProduct = e.target.value;
+          loadAndRenderEvolucao();
+        });
+
+        content.querySelectorAll(".dash-metric-chip").forEach(btn => {
+          btn.addEventListener("click", () => {
+            evolutionState.selectedMetric = btn.dataset.metric;
+            renderEvolucaoTab(batches, changes);
+          });
+        });
+
+        wireBatchComparisonEvents(batches);
+
+        content.querySelectorAll(".batch-action-btn").forEach(btn => {
+          btn.addEventListener("click", () => {
+            const batchId = btn.dataset.batchId;
+            if (btn.dataset.action === "edit") {
+              editBatchData(batchId, btn.dataset.rotulo, btn.dataset.periodo);
+            } else if (btn.dataset.action === "delete") {
+              deleteBatchData(batchId, btn.dataset.rotulo);
+            }
+          });
+        });
+
+        if (window.lucide) lucide.createIcons();
+      }
+
+      let batchEditTargetId = null;
+
+      function editBatchData(batchId, rotuloAtual, periodoAtual) {
+        batchEditTargetId = Number(batchId);
+        const modal = document.getElementById("batchEditModal");
+        const dateInput = document.getElementById("batchEditDate");
+        const labelInput = document.getElementById("batchEditLabel");
+
+        dateInput.value = periodoAtual && /^\d{4}-\d{2}-\d{2}$/.test(periodoAtual)
+          ? periodoAtual
+          : "";
+        labelInput.value = rotuloAtual || "";
+
+        modal.classList.add("active");
+        setTimeout(() => dateInput.focus(), 50);
+      }
+
+      async function saveBatchEdit() {
+        if (batchEditTargetId == null) return;
+        const modal = document.getElementById("batchEditModal");
+        const dateInput = document.getElementById("batchEditDate");
+        const labelInput = document.getElementById("batchEditLabel");
+        const confirmBtn = document.getElementById("batchEditConfirmBtn");
+
+        const dataLimpa = (dateInput.value || "").trim();
+        const novoRotulo = (labelInput.value || "").trim();
+
+        if (dataLimpa && !/^\d{4}-\d{2}-\d{2}$/.test(dataLimpa)) {
+          alert("Data inválida. Selecione uma data válida.");
+          return;
+        }
+
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = "Salvando…";
+
+        try {
+          const resp = await fetch(BATCH_UPDATE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              batch_id: batchEditTargetId,
+              periodo: dataLimpa || null,
+              rotulo: novoRotulo || null
+            })
+          });
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          modal.classList.remove("active");
+          batchEditTargetId = null;
+          await loadAndRenderEvolucao();
+        } catch (err) {
+          console.error("Erro ao editar planilha:", err);
+          alert("Não foi possível salvar as alterações. " + (err.message || err));
+        } finally {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = "Salvar";
+        }
+      }
+
+      async function deleteBatchData(batchId, rotulo) {
+        const ok = confirm(
+          `Apagar TODOS os dados da planilha "${rotulo || batchId}"?\n\n` +
+          "Os anúncios desta rodada e as recomendações pendentes geradas a partir dela serão removidos. Esta ação não pode ser desfeita."
+        );
+        if (!ok) return;
+
+        try {
+          const resp = await fetch(BATCH_DELETE_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ batch_id: Number(batchId) })
+          });
+          if (!resp.ok) throw new Error("HTTP " + resp.status);
+          await loadAndRenderEvolucao();
+        } catch (err) {
+          console.error("Erro ao apagar planilha:", err);
+          alert("Não foi possível apagar a planilha. " + (err.message || err));
+        }
+      }
+
+      function drawEvolucaoSVG(batches, metric) {
+        const labels = {
+          lucro_total: "Lucro Total",
+          acos_medio: "ACOS Médio",
+          roas_medio: "ROAS Médio",
+          ticket_medio_valor: "Ticket Médio"
+        };
+        const title = labels[metric] || metric;
+        
+        const width = 800;
+        const height = 250;
+        const paddingLeft = 60;
+        const paddingRight = 30;
+        const paddingTop = 30;
+        const paddingBottom = 40;
+
+        const chartWidth = width - paddingLeft - paddingRight;
+        const chartHeight = height - paddingTop - paddingBottom;
+
+        const dataPoints = batches.map(b => b[metric] || 0);
+        const maxVal = Math.max(...dataPoints, 0) * 1.15 || 10;
+
+        const n = batches.length;
+        const points = dataPoints.map((val, i) => {
+          const x = paddingLeft + (n > 1 ? (i * chartWidth / (n - 1)) : chartWidth / 2);
+          const y = height - paddingBottom - (val * chartHeight / maxVal);
+          return { x, y, val, label: batches[i].rotulo };
+        });
+
+        let pathD = "";
+        let areaD = "";
+        
+        if (n > 0) {
+          pathD = `M ${points[0].x} ${points[0].y}`;
+          areaD = `M ${points[0].x} ${height - paddingBottom} L ${points[0].x} ${points[0].y}`;
+          for (let i = 1; i < n; i++) {
+            pathD += ` L ${points[i].x} ${points[i].y}`;
+            areaD += ` L ${points[i].x} ${points[i].y}`;
+          }
+          areaD += ` L ${points[n - 1].x} ${height - paddingBottom} Z`;
+        }
+
+        let gridLines = "";
+        const gridSteps = 4;
+        for (let i = 0; i <= gridSteps; i++) {
+          const val = (maxVal * i) / gridSteps;
+          const y = height - paddingBottom - (val * chartHeight / maxVal);
+          
+          let formattedVal = val.toFixed(0);
+          if (metric === "lucro_total" || metric === "ticket_medio_valor") {
+            formattedVal = "R$" + Number(val).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+          } else if (metric === "acos_medio") {
+            formattedVal += "%";
+          } else if (metric === "roas_medio") {
+            formattedVal += "x";
+          }
+
+          gridLines += `
+            <line x1="${paddingLeft}" y1="${y}" x2="${width - paddingRight}" y2="${y}" stroke="var(--border-color)" stroke-dasharray="4" />
+            <text x="${paddingLeft - 8}" y="${y + 4}" fill="var(--text-secondary)" font-size="10" text-anchor="end">${formattedVal}</text>
+          `;
+        }
+
+        let pointCircles = "";
+        points.forEach((pt, i) => {
+          let fmtVal = pt.val.toFixed(1);
+          if (metric === "lucro_total" || metric === "ticket_medio_valor") {
+            fmtVal = fmtBRL(pt.val);
+          } else if (metric === "acos_medio") {
+            fmtVal += "%";
+          } else if (metric === "roas_medio") {
+            fmtVal += "x";
+          }
+
+          pointCircles += `
+            <circle cx="${pt.x}" cy="${pt.y}" r="5" fill="var(--color-primary)" stroke="white" stroke-width="2" class="chart-dot" style="cursor: pointer;">
+              <title>${escapeHtml(pt.label)}&#10;${title}: ${fmtVal}</title>
+            </circle>
+            <text x="${pt.x}" y="${height - 15}" fill="var(--text-secondary)" font-size="10" text-anchor="middle">${escapeHtml(pt.label)}</text>
+          `;
+        });
+
+        return `
+          <svg viewBox="0 0 ${width} ${height}" style="width: 100%; height: auto; display: block; overflow: visible;">
+            <defs>
+              <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="var(--color-primary)" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="var(--color-primary)" stop-opacity="0.0"/>
+              </linearGradient>
+            </defs>
+            ${gridLines}
+            ${n > 1 ? `<path d="${areaD}" fill="url(#chartGradient)" />` : ""}
+            ${n > 0 ? `<path d="${pathD}" fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-linecap="round" />` : ""}
+            ${pointCircles}
+          </svg>
+        `;
+      }
+
+      function renderTrendCard(label, val, prevVal, unit) {
+        let pct = 0;
+        let deltaHtml = "";
+        let color = "var(--text-secondary)";
+
+        if (prevVal != null && prevVal > 0) {
+          const delta = val - prevVal;
+          pct = (delta / prevVal) * 100;
+
+          if (label === "ACOS Médio") {
+            if (pct < -0.5) {
+              deltaHtml = `🟢 ↓ ${Math.abs(pct).toFixed(1)}% melhor`;
+              color = "#059669";
+            } else if (pct > 0.5) {
+              deltaHtml = `🔴 ↑ ${pct.toFixed(1)}% pior`;
+              color = "#dc2626";
+            } else {
+              deltaHtml = `⚪ estável`;
+              color = "var(--text-secondary)";
+            }
+          } else {
+            if (pct > 0.5) {
+              deltaHtml = `🟢 ↑ ${pct.toFixed(1)}%`;
+              color = "#059669";
+            } else if (pct < -0.5) {
+              deltaHtml = `🔴 ↓ ${Math.abs(pct).toFixed(1)}%`;
+              color = "#dc2626";
+            } else {
+              deltaHtml = `⚪ estável`;
+              color = "var(--text-secondary)";
+            }
+          }
+        } else {
+          deltaHtml = "⚪ Sem histórico";
+        }
+
+        let formattedVal = "";
+        if (unit === "brl") formattedVal = fmtBRL(val);
+        else if (unit === "pct") formattedVal = val.toFixed(1) + "%";
+        else if (unit === "roas") formattedVal = val.toFixed(1) + "x";
+        else formattedVal = val;
+
+        return `
+          <div class="kpi-card" style="padding: 15px; background: var(--bg-chat); border: 1px solid var(--border-color); border-radius: 8px;">
+            <div class="kpi-label" style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 600;">${label}</div>
+            <div class="kpi-value" style="font-size: 18px; font-weight: 700; margin: 5px 0;">${formattedVal}</div>
+            <div style="font-size: 11px; font-weight: 600; color: ${color};">${deltaHtml}</div>
+          </div>
+        `;
+      }
+
+      function generateEvolucaoInsights(latest, previous) {
+        const insights = [];
+
+        if (previous.lucro_total > 0) {
+          const dProfit = latest.lucro_total - previous.lucro_total;
+          const pProfit = (dProfit / previous.lucro_total) * 100;
+          if (pProfit > 5) {
+            insights.push({
+              type: "success",
+              icon: "📈",
+              text: `O lucro total subiu **${pProfit.toFixed(0)}%** vs. a rodada anterior (de ${fmtBRL(previous.lucro_total)} para ${fmtBRL(latest.lucro_total)}).`
+            });
+          } else if (pProfit < -5) {
+            insights.push({
+              type: "warn",
+              icon: "📉",
+              text: `O lucro total caiu **${Math.abs(pProfit).toFixed(0)}%** vs. a rodada anterior (de ${fmtBRL(previous.lucro_total)} para ${fmtBRL(latest.lucro_total)}).`
+            });
+          }
+        }
+
+        if (previous.acos_medio > 0) {
+          const dACOS = latest.acos_medio - previous.acos_medio;
+          if (dACOS > 1.0) {
+            insights.push({
+              type: "warn",
+              icon: "⚠️",
+              text: `O ACOS médio subiu de **${previous.acos_medio.toFixed(1)}%** para **${latest.acos_medio.toFixed(1)}%**. Recomenda-se investigar campanhas com consumo excessivo.`
+            });
+          } else if (dACOS < -1.0) {
+            insights.push({
+              type: "success",
+              icon: "🎯",
+              text: `O ACOS médio reduziu de **${previous.acos_medio.toFixed(1)}%** para **${latest.acos_medio.toFixed(1)}%** — excelente otimização de custo.`
+            });
+          }
+        }
+
+        if (previous.roas_medio > 0) {
+          const dROAS = latest.roas_medio - previous.roas_medio;
+          if (dROAS > 0.5) {
+            insights.push({
+              type: "success",
+              icon: "🚀",
+              text: `O ROAS médio melhorou em **+${dROAS.toFixed(1)}x** (de ${previous.roas_medio.toFixed(1)}x para ${latest.roas_medio.toFixed(1)}x).`
+            });
+          } else if (dROAS < -0.5) {
+            insights.push({
+              type: "warn",
+              icon: "🛑",
+              text: `O ROAS médio reduziu em **${Math.abs(dROAS).toFixed(1)}x** (de ${previous.roas_medio.toFixed(1)}x para ${latest.roas_medio.toFixed(1)}x).`
+            });
+          }
+        }
+
+        if (insights.length === 0) {
+          insights.push({
+            type: "info",
+            icon: "✨",
+            text: "As métricas mantiveram-se estáveis na comparação com o último período."
+          });
+        }
+
+        const list = insights.map(it => `
+          <div style="padding: 10px 15px; margin-bottom: 8px; background: var(--bg-message-assistant); border-left: 4px solid var(--color-primary); border-radius: 4px; display: flex; align-items: flex-start; gap: 10px; font-size: 13px;">
+            <span style="font-size: 1.1rem; line-height: 1;">${it.icon}</span>
+            <span>${marked.parseInline(it.text)}</span>
+          </div>
+        `).join("");
+
+        return `
+          <div class="scope-block" style="margin-top: 25px;">
+            <div class="dash-section-title">💡 Insights da Linha do Tempo</div>
+            <div style="margin-top: 10px;">
+              ${list}
+            </div>
+          </div>
+        `;
+      }
+
+      function drawBatchComparisonTable(batchA, batchB) {
+        const rows = [
+          { label: "Lucro Total", key: "lucro_total", unit: "brl", lowerIsBetter: false },
+          { label: "Receita Total", key: "receita_total", unit: "brl", lowerIsBetter: false },
+          { label: "Investimento Ads", key: "investimento_total_ads", unit: "brl", lowerIsBetter: true },
+          { label: "ACOS Médio", key: "acos_medio", unit: "pct", lowerIsBetter: true },
+          { label: "ROAS Médio", key: "roas_medio", unit: "roas", lowerIsBetter: false },
+          { label: "CTR Médio", key: "ctr_medio", unit: "pct", lowerIsBetter: false },
+          { label: "Conversão Média", key: "conversao_media", unit: "pct", lowerIsBetter: false },
+          { label: "Ticket Médio", key: "ticket_medio_valor", unit: "brl", lowerIsBetter: false },
+          { label: "Saúde Média", key: "saude_media", unit: "num", lowerIsBetter: false },
+          { label: "Total Anúncios", key: "total_anuncios", unit: "num", lowerIsBetter: false }
+        ];
+
+        const fmt = (v, unit) => {
+          const n = Number(v) || 0;
+          if (unit === "brl") return fmtBRL(n);
+          if (unit === "pct") return n.toFixed(1) + "%";
+          if (unit === "roas") return n.toFixed(1) + "x";
+          return Number.isInteger(n) ? String(n) : n.toFixed(1);
+        };
+
+        const bodyRows = rows.map(r => {
+          const valA = Number(batchA[r.key]) || 0;
+          const valB = Number(batchB[r.key]) || 0;
+          const delta = valA - valB;
+
+          let deltaHtml = '<span style="color:var(--text-secondary)">—</span>';
+          if (valB !== 0 || valA !== 0) {
+            const pct = valB !== 0 ? (delta / Math.abs(valB)) * 100 : 0;
+            const isGood = r.lowerIsBetter ? delta < 0 : delta > 0;
+            const isNeutral = Math.abs(delta) < 1e-9;
+            const color = isNeutral ? "var(--text-secondary)" : (isGood ? "#059669" : "#dc2626");
+            const arrow = isNeutral ? "→" : (delta > 0 ? "↑" : "↓");
+            const pctTxt = valB !== 0 ? ` (${pct > 0 ? "+" : ""}${pct.toFixed(1)}%)` : "";
+            deltaHtml = `<span style="color:${color};font-weight:600;">${arrow} ${fmt(Math.abs(delta), r.unit)}${pctTxt}</span>`;
+          }
+
+          return `
+            <tr>
+              <td style="font-weight:600;">${r.label}</td>
+              <td style="text-align:right;">${fmt(valA, r.unit)}</td>
+              <td style="text-align:right;">${fmt(valB, r.unit)}</td>
+              <td style="text-align:right;">${deltaHtml}</td>
+            </tr>
+          `;
+        }).join("");
+
+        return `
+          <table class="dash-table" style="width:100%;border-collapse:collapse;">
+            <thead>
+              <tr style="text-align:left;border-bottom:2px solid var(--border-color);">
+                <th>Métrica</th>
+                <th style="text-align:right;">${escapeHtml(batchA.rotulo || "Rodada A")}</th>
+                <th style="text-align:right;">${escapeHtml(batchB.rotulo || "Rodada B")}</th>
+                <th style="text-align:right;">Diferença</th>
+              </tr>
+            </thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        `;
+      }
+
+      function renderBatchComparisonSelector(batches) {
+        if (batches.length < 2) return "";
+
+        const sorted = [...batches].reverse();
+        
+        if (!evolutionState.compBatchA) evolutionState.compBatchA = sorted[0].batch_id;
+        if (!evolutionState.compBatchB) evolutionState.compBatchB = sorted[1] ? sorted[1].batch_id : sorted[0].batch_id;
+
+        const optA = sorted.map(b => `<option value="${b.batch_id}" ${evolutionState.compBatchA === b.batch_id ? "selected" : ""}>${escapeHtml(b.rotulo)}</option>`).join("");
+        const optB = sorted.map(b => `<option value="${b.batch_id}" ${evolutionState.compBatchB === b.batch_id ? "selected" : ""}>${escapeHtml(b.rotulo)}</option>`).join("");
+
+        return `
+          <div class="scope-block" style="margin-top: 25px;">
+            <div class="dash-section-title">⚖️ Comparar 2 rodadas lado a lado</div>
+            <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap; margin-top: 10px;">
+              <div>
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Rodada A (Mais Recente)</label>
+                <select id="compBatchASelect" class="dashboard-filter" style="width: 180px;">${optA}</select>
+              </div>
+              <div style="font-size: 16px; font-weight: 700; color: var(--text-secondary); margin-top: 15px;">vs</div>
+              <div>
+                <label style="font-size: 12px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px;">Rodada B (Anterior)</label>
+                <select id="compBatchBSelect" class="dashboard-filter" style="width: 180px;">${optB}</select>
+              </div>
+            </div>
+            
+            <div id="batchComparisonResult" style="margin-top: 15px;"></div>
+          </div>
+        `;
+      }
+
+      function wireBatchComparisonEvents(batches) {
+        const selA = document.getElementById("compBatchASelect");
+        const selB = document.getElementById("compBatchBSelect");
+        if (!selA || !selB) return;
+
+        const renderTable = () => {
+          const idA = Number(selA.value);
+          const idB = Number(selB.value);
+          evolutionState.compBatchA = idA;
+          evolutionState.compBatchB = idB;
+
+          const batchA = batches.find(b => b.batch_id === idA);
+          const batchB = batches.find(b => b.batch_id === idB);
+
+          const resultDiv = document.getElementById("batchComparisonResult");
+          if (!batchA || !batchB) {
+            resultDiv.innerHTML = '<div style="font-size:12px;color:var(--text-secondary)">Selecione duas rodadas válidas.</div>';
+            return;
+          }
+
+          resultDiv.innerHTML = drawBatchComparisonTable(batchA, batchB);
+        };
+
+        selA.addEventListener("change", renderTable);
+        selB.addEventListener("change", renderTable);
+
+        renderTable();
       }
 
       // — Modal logic —
